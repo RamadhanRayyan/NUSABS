@@ -1,0 +1,89 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "A student, teacher, or admin at NUSA Boarding School.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Firebase Auth UID" },
+        "name": { "type": "string", "description": "Full name" },
+        "email": { "type": "string", "format": "email" },
+        "role": { "type": "string", "enum": ["student", "teacher", "admin"] },
+        "photoURL": { "type": "string", "format": "uri" },
+        "grade": { "type": "string", "description": "Grade level (e.g., 10, 11, 12)" },
+        "streak": { "type": "number", "description": "Current coding streak in days" },
+        "points": { "type": "number", "description": "Total NUSA points earned" },
+        "githubHandle": { "type": "string" },
+        "bio": { "type": "string" }
+      },
+      "required": ["uid", "name", "email", "role"]
+    },
+    "Project": {
+      "title": "Project",
+      "description": "A technical project built by a student.",
+      "type": "object",
+      "properties": {
+        "studentId": { "type": "string", "description": "UID of the student author" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "githubUrl": { "type": "string", "format": "uri" },
+        "demoUrl": { "type": "string", "format": "uri" },
+        "thumbnail": { "type": "string", "format": "uri" },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "status": { "type": "string", "enum": ["draft", "published", "archived"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["studentId", "title", "status"]
+    },
+    "DailyActivity": {
+      "title": "DailyActivity",
+      "description": "Daily tracking of ibadah, discipline, and habits.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "ibadah": {
+          "type": "object",
+          "properties": {
+            "tahajjud": { "type": "boolean" },
+            "subuh": { "type": "boolean" },
+            "dhuhr": { "type": "boolean" },
+            "asr": { "type": "boolean" },
+            "maghrib": { "type": "boolean" },
+            "isha": { "type": "boolean" },
+            "tilawah": { "type": "number", "description": "Pages read" }
+          }
+        },
+        "discipline": {
+          "type": "object",
+          "properties": {
+            "onTime": { "type": "boolean" },
+            "neatness": { "type": "boolean" }
+          }
+        },
+        "habits": {
+          "type": "object",
+          "properties": {
+            "codingMinutes": { "type": "number" },
+            "englishSpeaking": { "type": "boolean" }
+          }
+        }
+      },
+      "required": ["userId", "date"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile data"
+    },
+    "/projects/{projectId}": {
+      "schema": "Project",
+      "description": "Student projects"
+    },
+    "/daily_activities/{activityId}": {
+      "schema": "DailyActivity",
+      "description": "Daily tracking logs"
+    }
+  }
+}
