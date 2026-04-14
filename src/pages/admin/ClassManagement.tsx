@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Plus, Users, GraduationCap, Loader2, BookOpen } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { toast } from 'sonner';
 
 export default function ClassManagement() {
   const [classes, setClasses] = useState<any[]>([]);
@@ -35,6 +36,8 @@ export default function ClassManagement() {
       setClasses(cls || []);
       setTeachers((users || []).filter((u: any) => u.role === 'teacher' && u.status === 'active'));
       setStudents((users || []).filter((u: any) => u.role === 'student' && u.status === 'active'));
+    } catch (e: any) {
+      toast.error('Failed to load data');
     } finally { setLoading(false); }
   }
 
@@ -44,10 +47,13 @@ export default function ClassManagement() {
     try {
       const { error } = await supabase.from('classes').insert([form]);
       if (error) throw error;
+      toast.success('Class created successfully');
       setCreateOpen(false);
       setForm({ name: '', teacher_id: '' });
       fetchAll();
-    } catch (e) { console.error(e); }
+    } catch (e: any) {
+      toast.error('Failed to create class');
+    }
     finally { setSaving(false); }
   }
 
@@ -59,10 +65,13 @@ export default function ClassManagement() {
         .update({ class_id: selectedClass.id })
         .eq('id', selectedStudentId);
       if (error) throw error;
+      toast.success('Student assigned successfully');
       setAssignOpen(false);
       setSelectedStudentId('');
       fetchAll();
-    } catch (e) { console.error(e); }
+    } catch (e: any) {
+      toast.error('Failed to assign student');
+    }
   }
 
   return (

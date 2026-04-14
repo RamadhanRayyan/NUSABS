@@ -6,6 +6,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
+import { Toaster } from "sonner";
 
 // Auth pages
 import LoginPage from "./pages/LoginPage";
@@ -32,6 +33,7 @@ import StudentAssignments from "./pages/student/StudentAssignments";
 function App() {
   return (
     <AuthProvider>
+      <Toaster position="top-center" richColors />
       <Router>
         <Routes>
           {/* Public Auth Routes */}

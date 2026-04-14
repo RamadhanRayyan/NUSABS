@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CheckCircle2, XCircle, Search, UserPlus, Loader2, RefreshCw } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function UserManagement() {
   const [users, setUsers] = useState<any[]>([]);
@@ -26,6 +27,8 @@ export default function UserManagement() {
     try {
       const data = await supabaseService.getUsers();
       setUsers(data || []);
+    } catch (e: any) {
+      toast.error('Failed to fetch users');
     } finally { setLoading(false); }
   }
 
@@ -33,15 +36,21 @@ export default function UserManagement() {
     setActionLoading(userId);
     try {
       await supabaseService.updateUserStatus(userId, action);
+      toast.success(`User marked as ${action}`);
       fetchUsers();
+    } catch (e: any) {
+      toast.error('Failed to update user status');
     } finally { setActionLoading(null); }
   }
 
   async function handleRoleChange(userId: string, role: string) {
     try {
       await supabaseService.updateUserRole(userId, role);
+      toast.success('User role updated');
       fetchUsers();
-    } catch (e) { console.error(e); }
+    } catch (e: any) {
+      toast.error('Failed to update user role');
+    }
   }
 
   const filtered = users.filter(u => {
