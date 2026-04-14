@@ -16,14 +16,25 @@ export default function LoginPage() {
   const { user, profile, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
-  // Redirect if already logged in
+  // Redirect logic
   useEffect(() => {
+    // If we have both user and profile, we can redirect
     if (!authLoading && user && profile) {
-      if (profile.status === 'pending') {
-        navigate('/waiting');
-      } else {
+      if (profile.status === 'active') {
         navigate('/dashboard');
+      } else {
+        navigate('/waiting');
       }
+    }
+    
+    // Fallback: If loading finished, user exists, but profile is missing
+    // after a reasonable timeout, we might be in a stuck state.
+    if (!authLoading && user && !profile) {
+      console.warn("User authenticated but profile not found in database.");
+      // If no profile after loading, they might need to logout or register again
+      // but let's try to redirect to /waiting or /dashboard anyway and let the 
+      // routes handle the error more gracefully than a stuck screen.
+      navigate('/dashboard'); 
     }
   }, [user, profile, authLoading, navigate]);
 
@@ -35,30 +46,29 @@ export default function LoginPage() {
       const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
       
       if (authError) {
-        toast.error('Login Failed', {
-          description: authError.message
-        });
+        toast.error('Login Failed', { description: authError.message });
+        setLoading(false);
         return;
       }
 
-      toast.success('Login Successful', {
-        description: 'Redirecting to your dashboard...'
-      });
-      
-      // Control redirection via useEffect above to ensure context is updated
+      toast.success('Login Successful', { description: 'Syncing your profile...' });
     } catch (err: any) {
-      toast.error('Error', {
-        description: err.message || 'An unexpected error occurred'
-      });
-    } finally {
+      toast.error('Error', { description: err.message || 'An unexpected error occurred' });
       setLoading(false);
     }
   };
 
-  if (authLoading && !user) {
+  // Show a full-page loader if we're technically "logged in" but waiting for profile data
+  if (authLoading || (user && !profile)) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-4">
+        <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center animate-pulse">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+        <div className="text-center space-y-1">
+          <p className="font-medium">Redirecting to Dashboard...</p>
+          <p className="text-sm text-muted-foreground animate-pulse">Please wait while we sync your data</p>
+        </div>
       </div>
     );
   }

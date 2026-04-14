@@ -51,6 +51,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .eq('id', userId)
         .single();
 
+      if (error && error.code === 'PGRST116') {
+        // Record missing! Attempt to auto-create from auth metadata
+        console.warn('Profile missing in DB, attempting auto-repair...');
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: newProfile, error: createError } = await supabase
+            .from('users')
+            .upsert({
+              id: user.id,
+              name: user.user_metadata?.name || 'New User',
+              email: user.email!,
+              role: user.user_metadata?.role || 'student',
+              status: 'pending'
+            })
+            .select()
+            .single();
+          
+          if (!createError) {
+            setProfile(newProfile);
+            return;
+          }
+        }
+      }
+
       if (error) throw error;
       setProfile(data);
     } catch (error) {
