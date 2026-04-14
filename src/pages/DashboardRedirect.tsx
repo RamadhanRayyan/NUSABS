@@ -18,6 +18,11 @@ export default function DashboardRedirect() {
     return <Navigate to="/login" replace />;
   }
 
+  // If status is explicitly pending/rejected, go to waiting page
+  if (!profile.status || profile.status === 'pending' || profile.status === 'rejected') {
+    return <Navigate to="/waiting" replace />;
+  }
+
   switch (profile.role) {
     case 'admin':
       return <Navigate to="/admin" replace />;
@@ -26,6 +31,6 @@ export default function DashboardRedirect() {
     case 'student':
       return <Navigate to="/student" replace />;
     default:
-      return <Navigate to="/login" replace />;
+      return <Navigate to="/waiting" replace />;
   }
 }

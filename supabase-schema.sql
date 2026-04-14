@@ -1,187 +1,285 @@
--- NUSA Boarding School SaaS Database Schema
--- Run this in Supabase SQL Editor
+-- ============================================================
+-- NUSA BOARDING SCHOOL - CLEAN SCHEMA
+-- Jalankan di Supabase SQL Editor (satu per satu bagian)
+-- ============================================================
 
--- 1. Enable UUID extension
+-- BAGIAN A: TABLES
+-- ============================================================
+
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- 2. Users Table (Public mirror of auth.users)
-CREATE TABLE users (
-  id UUID REFERENCES auth.users ON DELETE CASCADE PRIMARY KEY,
-  name TEXT NOT NULL,
+CREATE TABLE IF NOT EXISTS public.users (
+  id UUID PRIMARY KEY,
+  name TEXT NOT NULL DEFAULT 'User',
   email TEXT UNIQUE NOT NULL,
-  role TEXT CHECK (role IN ('admin', 'teacher', 'student')) NOT NULL DEFAULT 'student',
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+  role TEXT NOT NULL DEFAULT 'student' CHECK (role IN ('admin','teacher','student')),
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','active','rejected')),
+  class_id UUID,
+  created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 3. Profiles Table
-CREATE TABLE profiles (
-  user_id UUID REFERENCES users(id) ON DELETE CASCADE PRIMARY KEY,
-  avatar_url TEXT,
-  bio TEXT,
-  class_id UUID -- Optional: current primary class
-);
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'pending';
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS class_id UUID;
 
--- 4. Classes Table
-CREATE TABLE classes (
+CREATE TABLE IF NOT EXISTS public.classes (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   name TEXT NOT NULL,
-  teacher_id UUID REFERENCES users(id) ON DELETE SET NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+  teacher_id UUID REFERENCES public.users(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 5. Enrollments Table
-CREATE TABLE enrollments (
+CREATE TABLE IF NOT EXISTS public.tasks (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-  student_id UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL,
-  class_id UUID REFERENCES classes(id) ON DELETE CASCADE NOT NULL,
-  enrolled_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
-  UNIQUE(student_id, class_id)
-);
-
--- 6. Assignments Table
-CREATE TABLE assignments (
-  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  user_id UUID REFERENCES public.users(id) ON DELETE CASCADE NOT NULL,
+  type TEXT NOT NULL CHECK (type IN ('design_daily','programming_weekly','business_monthly')),
   title TEXT NOT NULL,
   description TEXT,
-  teacher_id UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL,
-  class_id UUID REFERENCES classes(id) ON DELETE CASCADE NOT NULL,
-  deadline TIMESTAMP WITH TIME ZONE,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+  deadline TIMESTAMPTZ,
+  status TEXT DEFAULT 'pending' CHECK (status IN ('pending','submitted','reviewed')),
+  created_by UUID REFERENCES public.users(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 7. Submissions Table
-CREATE TABLE submissions (
+CREATE TABLE IF NOT EXISTS public.submissions (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-  assignment_id UUID REFERENCES assignments(id) ON DELETE CASCADE NOT NULL,
-  student_id UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+  task_id UUID REFERENCES public.tasks(id) ON DELETE CASCADE NOT NULL,
+  user_id UUID REFERENCES public.users(id) ON DELETE CASCADE NOT NULL,
   file_url TEXT,
+  comment TEXT,
   grade NUMERIC(5,2),
   feedback TEXT,
-  submitted_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
-  UNIQUE(assignment_id, student_id)
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(task_id, user_id)
 );
 
--- 8. Projects Table
-CREATE TABLE projects (
+CREATE TABLE IF NOT EXISTS public.reviews (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-  student_id UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+  submission_id UUID REFERENCES public.submissions(id) ON DELETE CASCADE NOT NULL,
+  teacher_id UUID REFERENCES public.users(id) ON DELETE SET NULL,
+  score NUMERIC(5,2),
+  feedback TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS public.check_logs (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  user_id UUID REFERENCES public.users(id) ON DELETE CASCADE NOT NULL,
+  type TEXT NOT NULL CHECK (type IN ('checkin','checkout')),
+  note TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS public.exam_scores (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  user_id UUID REFERENCES public.users(id) ON DELETE CASCADE NOT NULL,
+  subject TEXT NOT NULL,
+  score NUMERIC(5,2) NOT NULL,
+  teacher_id UUID REFERENCES public.users(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS public.notifications (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  user_id UUID REFERENCES public.users(id) ON DELETE CASCADE NOT NULL,
   title TEXT NOT NULL,
-  description TEXT,
-  github_url TEXT,
-  status TEXT CHECK (status IN ('draft', 'published')) DEFAULT 'draft',
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+  message TEXT NOT NULL,
+  is_read BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 9. Portfolios Table
-CREATE TABLE portfolios (
+CREATE TABLE IF NOT EXISTS public.activity_logs (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-  student_id UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL,
-  project_id UUID REFERENCES projects(id) ON DELETE CASCADE NOT NULL,
-  published_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
-  UNIQUE(student_id, project_id)
-);
-
--- 10. Attendance Table
-CREATE TABLE attendance (
-  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-  student_id UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL,
-  date DATE DEFAULT CURRENT_DATE NOT NULL,
-  status TEXT CHECK (status IN ('present', 'absent', 'late', 'excused')) NOT NULL,
-  UNIQUE(student_id, date)
-);
-
--- 11. Activity Logs Table
-CREATE TABLE activity_logs (
-  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-  user_id UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+  user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
   activity_type TEXT NOT NULL,
-  description TEXT,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+  description TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- ==========================================
--- ROW LEVEL SECURITY (RLS)
--- ==========================================
+-- ============================================================
+-- BAGIAN B: TRIGGERS
+-- ============================================================
 
-ALTER TABLE users ENABLE ROW LEVEL SECURITY;
-ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE classes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE enrollments ENABLE ROW LEVEL SECURITY;
-ALTER TABLE assignments ENABLE ROW LEVEL SECURITY;
-ALTER TABLE submissions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE projects ENABLE ROW LEVEL SECURITY;
-ALTER TABLE portfolios ENABLE ROW LEVEL SECURITY;
-ALTER TABLE attendance ENABLE ROW LEVEL SECURITY;
-ALTER TABLE activity_logs ENABLE ROW LEVEL SECURITY;
+-- Trigger: Auto-create user profile on signup
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+DROP FUNCTION IF EXISTS public.handle_new_user() CASCADE;
 
--- Helper function to check role
-CREATE OR REPLACE FUNCTION get_user_role()
-RETURNS TEXT AS $$
-  SELECT role FROM users WHERE id = auth.uid();
-$$ LANGUAGE sql SECURITY DEFINER;
-
--- Users Policies
-CREATE POLICY "Users can view all users" ON users FOR SELECT USING (true);
-CREATE POLICY "Admins can manage all users" ON users FOR ALL USING (get_user_role() = 'admin');
-
--- Profiles Policies
-CREATE POLICY "Profiles are viewable by everyone" ON profiles FOR SELECT USING (true);
-CREATE POLICY "Users can update own profile" ON profiles FOR UPDATE USING (auth.uid() = user_id);
-
--- Classes Policies
-CREATE POLICY "Classes are viewable by everyone" ON classes FOR SELECT USING (true);
-CREATE POLICY "Admins can manage classes" ON classes FOR ALL USING (get_user_role() = 'admin');
-
--- Enrollments Policies
-CREATE POLICY "Enrollments viewable by teachers and admins" ON enrollments FOR SELECT USING (get_user_role() IN ('admin', 'teacher') OR auth.uid() = student_id);
-CREATE POLICY "Admins can manage enrollments" ON enrollments FOR ALL USING (get_user_role() = 'admin');
-
--- Assignments Policies
-CREATE POLICY "Assignments viewable by class members" ON assignments FOR SELECT USING (true); -- Simplified
-CREATE POLICY "Teachers can manage their assignments" ON assignments FOR ALL USING (get_user_role() = 'teacher' AND teacher_id = auth.uid());
-CREATE POLICY "Admins can manage all assignments" ON assignments FOR ALL USING (get_user_role() = 'admin');
-
--- Submissions Policies
-CREATE POLICY "Students can manage own submissions" ON submissions FOR ALL USING (auth.uid() = student_id);
-CREATE POLICY "Teachers can view and grade submissions for their assignments" ON submissions FOR ALL USING (
-  EXISTS (SELECT 1 FROM assignments WHERE id = assignment_id AND teacher_id = auth.uid())
-);
-
--- Projects Policies
-CREATE POLICY "Students can manage own projects" ON projects FOR ALL USING (auth.uid() = student_id);
-CREATE POLICY "Published projects viewable by everyone" ON projects FOR SELECT USING (status = 'published' OR auth.uid() = student_id);
-
--- Portfolios Policies
-CREATE POLICY "Portfolios viewable by everyone" ON portfolios FOR SELECT USING (true);
-CREATE POLICY "Students can manage own portfolios" ON portfolios FOR ALL USING (auth.uid() = student_id);
-
--- Attendance Policies
-CREATE POLICY "Students can view own attendance" ON attendance FOR SELECT USING (auth.uid() = student_id);
-CREATE POLICY "Teachers can manage attendance" ON attendance FOR ALL USING (get_user_role() = 'teacher');
-CREATE POLICY "Admins can manage attendance" ON attendance FOR ALL USING (get_user_role() = 'admin');
-
--- Activity Logs Policies
-CREATE POLICY "Users can view own logs" ON activity_logs FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Admins can view all logs" ON activity_logs FOR SELECT USING (get_user_role() = 'admin');
-
--- ==========================================
--- TRIGGERS
--- ==========================================
-
--- Automatically create user in public.users on auth.signup
 CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS trigger AS $$
+RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 BEGIN
-  INSERT INTO public.users (id, name, email, role)
-  VALUES (new.id, COALESCE(new.raw_user_meta_data->>'name', 'User'), new.email, COALESCE(new.raw_user_meta_data->>'role', 'student'));
-  
-  INSERT INTO public.profiles (user_id)
-  VALUES (new.id);
-  
-  RETURN new;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+  INSERT INTO public.users (id, name, email, role, status)
+  VALUES (
+    NEW.id,
+    COALESCE(NEW.raw_user_meta_data->>'name', 'New User'),
+    NEW.email,
+    COALESCE(NEW.raw_user_meta_data->>'role', 'student'),
+    'pending'
+  )
+  ON CONFLICT (id) DO UPDATE
+    SET email = EXCLUDED.email,
+        name = COALESCE(EXCLUDED.name, public.users.name);
+  RETURN NEW;
+EXCEPTION WHEN OTHERS THEN
+  RETURN NEW;
+END; $$;
 
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
+
+-- Trigger: Auto-log checkin/checkout
+DROP TRIGGER IF EXISTS on_attendance_created ON public.check_logs;
+DROP FUNCTION IF EXISTS public.log_attendance_activity() CASCADE;
+
+CREATE OR REPLACE FUNCTION public.log_attendance_activity()
+RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER AS $$
+BEGIN
+  INSERT INTO public.activity_logs (user_id, activity_type, description)
+  VALUES (NEW.user_id, NEW.type,
+    CASE WHEN NEW.type = 'checkin' THEN 'Melakukan Check-In'
+         ELSE 'Melakukan Check-Out' END);
+  RETURN NEW;
+EXCEPTION WHEN OTHERS THEN RETURN NEW;
+END; $$;
+
+CREATE TRIGGER on_attendance_created
+  AFTER INSERT ON public.check_logs
+  FOR EACH ROW EXECUTE PROCEDURE public.log_attendance_activity();
+
+-- Trigger: Auto-log task submission
+DROP TRIGGER IF EXISTS on_submission_created ON public.submissions;
+DROP FUNCTION IF EXISTS public.log_submission_activity() CASCADE;
+
+CREATE OR REPLACE FUNCTION public.log_submission_activity()
+RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER AS $$
+BEGIN
+  INSERT INTO public.activity_logs (user_id, activity_type, description)
+  VALUES (NEW.user_id, 'submission', 'Mengumpulkan tugas');
+  RETURN NEW;
+EXCEPTION WHEN OTHERS THEN RETURN NEW;
+END; $$;
+
+CREATE TRIGGER on_submission_created
+  AFTER INSERT ON public.submissions
+  FOR EACH ROW EXECUTE PROCEDURE public.log_submission_activity();
+
+-- Trigger: Notify student when task reviewed
+DROP TRIGGER IF EXISTS on_review_created ON public.reviews;
+DROP FUNCTION IF EXISTS public.notify_on_review() CASCADE;
+
+CREATE OR REPLACE FUNCTION public.notify_on_review()
+RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER AS $$
+DECLARE v_user_id UUID;
+BEGIN
+  SELECT user_id INTO v_user_id FROM public.submissions WHERE id = NEW.submission_id;
+  IF v_user_id IS NOT NULL THEN
+    INSERT INTO public.notifications (user_id, title, message)
+    VALUES (v_user_id, 'Submission Reviewed!',
+      'Your submission has been reviewed. Score: ' || NEW.score::TEXT);
+  END IF;
+  RETURN NEW;
+EXCEPTION WHEN OTHERS THEN RETURN NEW;
+END; $$;
+
+CREATE TRIGGER on_review_created
+  AFTER INSERT ON public.reviews
+  FOR EACH ROW EXECUTE PROCEDURE public.notify_on_review();
+
+-- Trigger: Notify student when exam score added
+DROP TRIGGER IF EXISTS on_score_added ON public.exam_scores;
+DROP FUNCTION IF EXISTS public.notify_on_score() CASCADE;
+
+CREATE OR REPLACE FUNCTION public.notify_on_score()
+RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER AS $$
+BEGIN
+  INSERT INTO public.notifications (user_id, title, message)
+  VALUES (NEW.user_id, 'New Exam Score!',
+    'Your score for ' || NEW.subject || ': ' || NEW.score::TEXT);
+  RETURN NEW;
+EXCEPTION WHEN OTHERS THEN RETURN NEW;
+END; $$;
+
+CREATE TRIGGER on_score_added
+  AFTER INSERT ON public.exam_scores
+  FOR EACH ROW EXECUTE PROCEDURE public.notify_on_score();
+
+-- ============================================================
+-- BAGIAN C: ROW LEVEL SECURITY
+-- ============================================================
+
+ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.classes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.tasks ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.submissions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.reviews ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.check_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.exam_scores ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.activity_logs ENABLE ROW LEVEL SECURITY;
+
+-- Drop semua policy lama
+DO $$
+DECLARE r RECORD;
+BEGIN
+  FOR r IN SELECT policyname, tablename FROM pg_policies WHERE schemaname = 'public' LOOP
+    EXECUTE format('DROP POLICY IF EXISTS %I ON public.%I', r.policyname, r.tablename);
+  END LOOP;
+END $$;
+
+-- USERS: Pakai "id" (primary key), bukan "user_id"
+CREATE POLICY "u_read_own"  ON public.users FOR SELECT USING (auth.uid() = id);
+CREATE POLICY "u_admin_all" ON public.users FOR ALL   USING ((auth.jwt()->'user_metadata'->>'role') = 'admin');
+CREATE POLICY "u_insert"    ON public.users FOR INSERT WITH CHECK (true);
+
+-- CLASSES
+CREATE POLICY "c_read" ON public.classes FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "c_admin" ON public.classes FOR ALL USING ((auth.jwt()->'user_metadata'->>'role') = 'admin');
+
+-- TASKS
+CREATE POLICY "t_read_own" ON public.tasks FOR SELECT
+  USING (auth.uid() = user_id OR (auth.jwt()->'user_metadata'->>'role') IN ('teacher','admin'));
+CREATE POLICY "t_write" ON public.tasks FOR INSERT
+  WITH CHECK ((auth.jwt()->'user_metadata'->>'role') IN ('teacher','admin'));
+CREATE POLICY "t_update" ON public.tasks FOR UPDATE
+  USING ((auth.jwt()->'user_metadata'->>'role') IN ('teacher','admin') OR auth.uid() = user_id);
+
+-- SUBMISSIONS
+CREATE POLICY "s_read" ON public.submissions FOR SELECT
+  USING (auth.uid() = user_id OR (auth.jwt()->'user_metadata'->>'role') IN ('teacher','admin'));
+CREATE POLICY "s_insert" ON public.submissions FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "s_update" ON public.submissions FOR UPDATE
+  USING ((auth.jwt()->'user_metadata'->>'role') IN ('teacher','admin'));
+
+-- REVIEWS
+CREATE POLICY "r_read" ON public.reviews FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "r_write" ON public.reviews FOR INSERT
+  WITH CHECK ((auth.jwt()->'user_metadata'->>'role') IN ('teacher','admin'));
+
+-- CHECK_LOGS
+CREATE POLICY "cl_own" ON public.check_logs FOR ALL USING (auth.uid() = user_id);
+
+-- EXAM_SCORES
+CREATE POLICY "es_read" ON public.exam_scores FOR SELECT
+  USING (auth.uid() = user_id OR (auth.jwt()->'user_metadata'->>'role') IN ('teacher','admin'));
+CREATE POLICY "es_write" ON public.exam_scores FOR INSERT
+  WITH CHECK ((auth.jwt()->'user_metadata'->>'role') IN ('teacher','admin'));
+
+-- NOTIFICATIONS
+CREATE POLICY "n_own" ON public.notifications FOR ALL USING (auth.uid() = user_id);
+
+-- ACTIVITY_LOGS
+CREATE POLICY "al_read" ON public.activity_logs FOR SELECT
+  USING (auth.uid() = user_id OR (auth.jwt()->'user_metadata'->>'role') = 'admin');
+CREATE POLICY "al_insert" ON public.activity_logs FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+
+-- ============================================================
+-- BAGIAN D: AKTIFKAN ADMIN
+-- ============================================================
+
+-- Tambah admin dari auth.users jika belum ada
+INSERT INTO public.users (id, name, email, role, status)
+SELECT id, 'Admin NUSA', email, 'admin', 'active'
+FROM auth.users
+WHERE email = 'muhammadramadhanrayyan@gmail.com'
+ON CONFLICT (id) DO UPDATE
+  SET role = 'admin', status = 'active';

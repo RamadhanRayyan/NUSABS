@@ -20,13 +20,23 @@ export default function LoginPage() {
     setError(null);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      const { data, error: authError } = await supabase.auth.signInWithPassword({ email, password });
+      if (authError) throw authError;
 
-      if (error) throw error;
-      navigate('/dashboard');
+      // Check profile status after login
+      if (data.user) {
+        const { data: profile } = await supabase
+          .from('users')
+          .select('status, role')
+          .eq('id', data.user.id)
+          .single();
+
+        if (profile?.status === 'pending') {
+          navigate('/waiting');
+        } else {
+          navigate('/dashboard');
+        }
+      }
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -64,6 +74,7 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                autoComplete="email"
                 className="bg-secondary/50 border-border/50"
               />
             </div>
@@ -80,6 +91,7 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                autoComplete="current-password"
                 className="bg-secondary/50 border-border/50"
               />
             </div>

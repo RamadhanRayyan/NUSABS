@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { UserPlus, Loader2 } from 'lucide-react';
+import { UserPlus, Loader2, CheckCircle2 } from 'lucide-react';
 
 export default function RegisterPage() {
   const [name, setName] = useState('');
@@ -15,6 +15,7 @@ export default function RegisterPage() {
   const [role, setRole] = useState('student');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
   const navigate = useNavigate();
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -23,28 +24,64 @@ export default function RegisterPage() {
     setError(null);
 
     try {
-      const { error } = await supabase.auth.signUp({
+      // 1. Daftarkan ke Supabase Auth
+      const { data, error: authError } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          data: {
-            name,
-            role,
-          },
+          data: { name, role },
         },
       });
 
-      if (error) throw error;
-      
-      // Inform user to check email
-      alert('Registration successful! Please check your email to verify your account.');
-      navigate('/login');
+      if (authError) throw authError;
+      if (!data.user) throw new Error('Registration failed. Please try again.');
+
+      // 2. Simpan manual ke public.users sebagai fallback jika trigger gagal
+      const { error: dbError } = await supabase
+        .from('users')
+        .upsert({
+          id: data.user.id,
+          name,
+          email,
+          role,
+          status: 'pending',
+        }, { onConflict: 'id' });
+
+      if (dbError) {
+        console.warn('DB upsert warning (non-fatal):', dbError.message);
+      }
+
+      setSuccess(true);
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message || 'An unexpected error occurred.');
     } finally {
       setLoading(false);
     }
   };
+
+  if (success) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <Card className="w-full max-w-md border-emerald-500/20 bg-card/50 backdrop-blur-sm text-center">
+          <CardContent className="pt-10 pb-10 space-y-4">
+            <div className="flex justify-center">
+              <div className="w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center">
+                <CheckCircle2 className="w-8 h-8 text-emerald-500" />
+              </div>
+            </div>
+            <h2 className="text-2xl font-bold">Registration Successful!</h2>
+            <p className="text-muted-foreground text-sm">
+              Your account is now <strong>pending approval</strong> by the administrator. 
+              You will be able to access your dashboard once approved.
+            </p>
+            <Button className="w-full mt-4" onClick={() => navigate('/login')}>
+              Go to Login
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -75,6 +112,7 @@ export default function RegisterPage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
+                autoComplete="name"
                 className="bg-secondary/50 border-border/50"
               />
             </div>
@@ -83,10 +121,11 @@ export default function RegisterPage() {
               <Input
                 id="email"
                 type="email"
-                placeholder="name@example.com"
+                placeholder="name@nusabs.sch.id"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                autoComplete="email"
                 className="bg-secondary/50 border-border/50"
               />
             </div>
@@ -95,9 +134,11 @@ export default function RegisterPage() {
               <Input
                 id="password"
                 type="password"
+                placeholder="Min. 6 characters"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                autoComplete="new-password"
                 className="bg-secondary/50 border-border/50"
               />
             </div>
@@ -110,7 +151,6 @@ export default function RegisterPage() {
                 <SelectContent>
                   <SelectItem value="student">Student</SelectItem>
                   <SelectItem value="teacher">Teacher</SelectItem>
-                  <SelectItem value="admin">Administrator</SelectItem>
                 </SelectContent>
               </Select>
             </div>
