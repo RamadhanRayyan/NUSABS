@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { UserPlus, Loader2, CheckCircle2, Mail, Shield } from 'lucide-react';
 import { toast } from 'sonner';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 export default function RegisterPage() {
   const [name, setName] = useState('');
@@ -58,7 +59,7 @@ export default function RegisterPage() {
 
       setSuccess(true);
       toast.success('Akun Berhasil Dibuat!', {
-        description: 'Silakan cek email untuk konfirmasi.'
+        description: 'Silakan tunggu persetujuan dari Administrator sebelum bisa login.'
       });
     } catch (err: any) {
       toast.error('Error', {
@@ -72,7 +73,10 @@ export default function RegisterPage() {
   // Success state
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <div className="relative min-h-screen flex items-center justify-center bg-background p-4">
+        <div className="absolute top-4 right-4">
+          <ThemeToggle />
+        </div>
         <Card className="w-full max-w-md border-emerald-500/20 bg-card/50 backdrop-blur-sm shadow-xl">
           <CardHeader className="text-center space-y-4">
             <div className="flex justify-center">
@@ -86,20 +90,12 @@ export default function RegisterPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 space-y-2">
-              <div className="flex items-center gap-2 text-sm font-medium text-blue-400">
-                <Mail className="w-4 h-4" /> Langkah 1: Konfirmasi Email
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Cek inbox email <strong>{email}</strong> dan klik link konfirmasi yang kami kirim.
-              </p>
-            </div>
             <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 space-y-2">
               <div className="flex items-center gap-2 text-sm font-medium text-amber-400">
-                <Shield className="w-4 h-4" /> Langkah 2: Persetujuan Admin
+                <Shield className="w-4 h-4" /> Menunggu Persetujuan
               </div>
               <p className="text-xs text-muted-foreground">
-                Setelah konfirmasi email, akun Anda akan menunggu persetujuan dari Administrator sebelum bisa mengakses dashboard.
+                Akun Anda perlu disetujui oleh Administrator sebelum bisa digunakan untuk login.
               </p>
             </div>
           </CardContent>
@@ -107,12 +103,6 @@ export default function RegisterPage() {
             <Button className="w-full h-11" onClick={() => navigate('/login')}>
               Kembali ke Login
             </Button>
-            <p className="text-xs text-muted-foreground text-center">
-              Sudah konfirmasi email?{' '}
-              <Link to="/login" className="text-primary hover:underline font-medium">
-                Login di sini
-              </Link>
-            </p>
           </CardFooter>
         </Card>
       </div>
@@ -120,7 +110,10 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+    <div className="relative min-h-screen flex items-center justify-center bg-background p-4">
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
       <Card className="w-full max-w-md border-primary/20 bg-card/50 backdrop-blur-sm shadow-xl">
         <CardHeader className="space-y-1 text-center">
           <div className="flex justify-center mb-4">
@@ -138,7 +131,7 @@ export default function RegisterPage() {
             {/* Info Box */}
             <div className="bg-primary/5 border border-primary/10 rounded-lg p-3 text-xs text-muted-foreground space-y-1">
               <p className="font-medium text-foreground">📋 Proses Registrasi:</p>
-              <p>1. Isi form → 2. Konfirmasi email → 3. Admin approve → ✅ Aktif</p>
+              <p>1. Isi form → 2. Admin approve → ✅ Aktif</p>
             </div>
 
             <div className="space-y-2">
