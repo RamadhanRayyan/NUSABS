@@ -227,49 +227,87 @@ END $$;
 
 -- USERS: Pakai "id" (primary key), bukan "user_id"
 CREATE POLICY "u_read_own"  ON public.users FOR SELECT USING (auth.uid() = id);
-CREATE POLICY "u_admin_all" ON public.users FOR ALL   USING ((auth.jwt()->'user_metadata'->>'role') = 'admin');
+CREATE POLICY "u_admin_all" ON public.users FOR ALL   USING (
+  (auth.jwt()->'user_metadata'->>'role') = 'admin' OR 
+  (auth.jwt()->>'email') = 'muhammadramadhanrayyan@gmail.com'
+);
 CREATE POLICY "u_insert"    ON public.users FOR INSERT WITH CHECK (true);
 
 -- CLASSES
 CREATE POLICY "c_read" ON public.classes FOR SELECT USING (auth.role() = 'authenticated');
-CREATE POLICY "c_admin" ON public.classes FOR ALL USING ((auth.jwt()->'user_metadata'->>'role') = 'admin');
+CREATE POLICY "c_admin" ON public.classes FOR ALL USING (
+  (auth.jwt()->'user_metadata'->>'role') = 'admin' OR 
+  (auth.jwt()->>'email') = 'muhammadramadhanrayyan@gmail.com'
+);
 
 -- TASKS
 CREATE POLICY "t_read_own" ON public.tasks FOR SELECT
-  USING (auth.uid() = user_id OR (auth.jwt()->'user_metadata'->>'role') IN ('teacher','admin'));
+  USING (
+    auth.uid() = user_id OR 
+    (auth.jwt()->'user_metadata'->>'role') IN ('teacher','admin') OR
+    (auth.jwt()->>'email') = 'muhammadramadhanrayyan@gmail.com'
+  );
 CREATE POLICY "t_write" ON public.tasks FOR INSERT
-  WITH CHECK ((auth.jwt()->'user_metadata'->>'role') IN ('teacher','admin'));
+  WITH CHECK (
+    (auth.jwt()->'user_metadata'->>'role') IN ('teacher','admin') OR
+    (auth.jwt()->>'email') = 'muhammadramadhanrayyan@gmail.com'
+  );
 CREATE POLICY "t_update" ON public.tasks FOR UPDATE
-  USING ((auth.jwt()->'user_metadata'->>'role') IN ('teacher','admin') OR auth.uid() = user_id);
+  USING (
+    (auth.jwt()->'user_metadata'->>'role') IN ('teacher','admin') OR 
+    auth.uid() = user_id OR
+    (auth.jwt()->>'email') = 'muhammadramadhanrayyan@gmail.com'
+  );
 
 -- SUBMISSIONS
 CREATE POLICY "s_read" ON public.submissions FOR SELECT
-  USING (auth.uid() = user_id OR (auth.jwt()->'user_metadata'->>'role') IN ('teacher','admin'));
+  USING (
+    auth.uid() = user_id OR 
+    (auth.jwt()->'user_metadata'->>'role') IN ('teacher','admin') OR
+    (auth.jwt()->>'email') = 'muhammadramadhanrayyan@gmail.com'
+  );
 CREATE POLICY "s_insert" ON public.submissions FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "s_update" ON public.submissions FOR UPDATE
-  USING ((auth.jwt()->'user_metadata'->>'role') IN ('teacher','admin'));
+  USING (
+    (auth.jwt()->'user_metadata'->>'role') IN ('teacher','admin') OR
+    (auth.jwt()->>'email') = 'muhammadramadhanrayyan@gmail.com'
+  );
 
 -- REVIEWS
 CREATE POLICY "r_read" ON public.reviews FOR SELECT USING (auth.role() = 'authenticated');
 CREATE POLICY "r_write" ON public.reviews FOR INSERT
-  WITH CHECK ((auth.jwt()->'user_metadata'->>'role') IN ('teacher','admin'));
+  WITH CHECK (
+    (auth.jwt()->'user_metadata'->>'role') IN ('teacher','admin') OR
+    (auth.jwt()->>'email') = 'muhammadramadhanrayyan@gmail.com'
+  );
 
 -- CHECK_LOGS
 CREATE POLICY "cl_own" ON public.check_logs FOR ALL USING (auth.uid() = user_id);
 
 -- EXAM_SCORES
 CREATE POLICY "es_read" ON public.exam_scores FOR SELECT
-  USING (auth.uid() = user_id OR (auth.jwt()->'user_metadata'->>'role') IN ('teacher','admin'));
+  USING (
+    auth.uid() = user_id OR 
+    (auth.jwt()->'user_metadata'->>'role') IN ('teacher','admin') OR
+    (auth.jwt()->>'email') = 'muhammadramadhanrayyan@gmail.com'
+  );
 CREATE POLICY "es_write" ON public.exam_scores FOR INSERT
-  WITH CHECK ((auth.jwt()->'user_metadata'->>'role') IN ('teacher','admin'));
+  WITH CHECK (
+    (auth.jwt()->'user_metadata'->>'role') IN ('teacher','admin') OR
+    (auth.jwt()->>'email') = 'muhammadramadhanrayyan@gmail.com'
+  );
 
 -- NOTIFICATIONS
 CREATE POLICY "n_own" ON public.notifications FOR ALL USING (auth.uid() = user_id);
 
 -- ACTIVITY_LOGS
 CREATE POLICY "al_read" ON public.activity_logs FOR SELECT
-  USING (auth.uid() = user_id OR (auth.jwt()->'user_metadata'->>'role') = 'admin');
+  USING (
+    auth.uid() = user_id OR 
+    (auth.jwt()->'user_metadata'->>'role') = 'admin' OR
+    (auth.jwt()->>'email') = 'muhammadramadhanrayyan@gmail.com'
+  );
 CREATE POLICY "al_insert" ON public.activity_logs FOR INSERT WITH CHECK (auth.role() = 'authenticated');
 
 -- ============================================================

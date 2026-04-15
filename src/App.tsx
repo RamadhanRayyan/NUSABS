@@ -21,6 +21,9 @@ import DashboardLayout from "./components/layout/DashboardLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import UserManagement from "./pages/admin/UserManagement";
 import ClassManagement from "./pages/admin/ClassManagement";
+import StudentTracking from "./pages/admin/StudentTracking";
+import TeacherTracking from "./pages/admin/TeacherTracking";
+import AttendanceTracking from "./pages/admin/AttendanceTracking";
 
 // Teacher pages
 import TeacherDashboard from "./pages/teacher/TeacherDashboard";
@@ -33,7 +36,7 @@ import StudentAssignments from "./pages/student/StudentAssignments";
 function App() {
   return (
     <AuthProvider>
-      <Toaster position="top-center" richColors />
+      <Toaster position="top-center" richColors theme="dark" />
       <Router>
         <Routes>
           {/* Public Auth Routes */}
@@ -58,6 +61,21 @@ function App() {
           <Route path="/admin/classes" element={
             <ProtectedRoute allowedRoles={['admin']}>
               <DashboardLayout><ClassManagement /></DashboardLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/students" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <DashboardLayout><StudentTracking /></DashboardLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/teachers" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <DashboardLayout><TeacherTracking /></DashboardLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/attendance" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <DashboardLayout><AttendanceTracking /></DashboardLayout>
             </ProtectedRoute>
           } />
 

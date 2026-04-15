@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { UserPlus, Loader2, CheckCircle2 } from 'lucide-react';
+import { UserPlus, Loader2, CheckCircle2, Mail, Shield } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function RegisterPage() {
@@ -23,7 +23,7 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      // 1. Daftarkan ke Supabase Auth
+      // 1. Register with Supabase Auth
       const { data, error: authError } = await supabase.auth.signUp({
         email,
         password,
@@ -33,15 +33,15 @@ export default function RegisterPage() {
       });
 
       if (authError) {
-        toast.error('Registration Failed', {
+        toast.error('Registrasi Gagal', {
           description: authError.message
         });
         return;
       }
       
-      if (!data.user) throw new Error('Registration failed. Please try again.');
+      if (!data.user) throw new Error('Registrasi gagal. Silakan coba lagi.');
 
-      // 2. Simpan manual ke public.users sebagai fallback jika trigger gagal
+      // 2. Fallback insert to public.users if trigger fails
       const { error: dbError } = await supabase
         .from('users')
         .upsert({
@@ -56,22 +56,68 @@ export default function RegisterPage() {
         console.warn('DB upsert warning (non-fatal):', dbError.message);
       }
 
-      toast.success('Account Created', {
-        description: 'Your registration is successful. Redirecting...'
+      setSuccess(true);
+      toast.success('Akun Berhasil Dibuat!', {
+        description: 'Silakan cek email untuk konfirmasi.'
       });
-      
-      // Delay slightly so the user sees the toast
-      setTimeout(() => {
-        navigate('/waiting');
-      }, 1500);
     } catch (err: any) {
       toast.error('Error', {
-        description: err.message || 'An unexpected error occurred.'
+        description: err.message || 'Terjadi kesalahan yang tidak terduga.'
       });
     } finally {
       setLoading(false);
     }
   };
+
+  // Success state
+  if (success) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <Card className="w-full max-w-md border-emerald-500/20 bg-card/50 backdrop-blur-sm shadow-xl">
+          <CardHeader className="text-center space-y-4">
+            <div className="flex justify-center">
+              <div className="w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center">
+                <CheckCircle2 className="w-8 h-8 text-emerald-500" />
+              </div>
+            </div>
+            <CardTitle className="text-2xl font-bold">Registrasi Berhasil! 🎉</CardTitle>
+            <CardDescription className="text-base">
+              Akun Anda telah dibuat di NUSA Boarding School
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 space-y-2">
+              <div className="flex items-center gap-2 text-sm font-medium text-blue-400">
+                <Mail className="w-4 h-4" /> Langkah 1: Konfirmasi Email
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Cek inbox email <strong>{email}</strong> dan klik link konfirmasi yang kami kirim.
+              </p>
+            </div>
+            <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 space-y-2">
+              <div className="flex items-center gap-2 text-sm font-medium text-amber-400">
+                <Shield className="w-4 h-4" /> Langkah 2: Persetujuan Admin
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Setelah konfirmasi email, akun Anda akan menunggu persetujuan dari Administrator sebelum bisa mengakses dashboard.
+              </p>
+            </div>
+          </CardContent>
+          <CardFooter className="flex flex-col space-y-3">
+            <Button className="w-full h-11" onClick={() => navigate('/login')}>
+              Kembali ke Login
+            </Button>
+            <p className="text-xs text-muted-foreground text-center">
+              Sudah konfirmasi email?{' '}
+              <Link to="/login" className="text-primary hover:underline font-medium">
+                Login di sini
+              </Link>
+            </p>
+          </CardFooter>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -82,18 +128,24 @@ export default function RegisterPage() {
               <span className="text-primary-foreground font-bold text-2xl">N</span>
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold tracking-tight">Create Account</CardTitle>
+          <CardTitle className="text-2xl font-bold tracking-tight">Buat Akun</CardTitle>
           <CardDescription>
-            Join NUSA Boarding School digital ecosystem
+            Bergabung dengan ekosistem digital NUSA Boarding School
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleRegister}>
           <CardContent className="space-y-4">
+            {/* Info Box */}
+            <div className="bg-primary/5 border border-primary/10 rounded-lg p-3 text-xs text-muted-foreground space-y-1">
+              <p className="font-medium text-foreground">📋 Proses Registrasi:</p>
+              <p>1. Isi form → 2. Konfirmasi email → 3. Admin approve → ✅ Aktif</p>
+            </div>
+
             <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
+              <Label htmlFor="name">Nama Lengkap</Label>
               <Input
                 id="name"
-                placeholder="John Doe"
+                placeholder="Masukkan nama lengkap"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
@@ -106,7 +158,7 @@ export default function RegisterPage() {
               <Input
                 id="email"
                 type="email"
-                placeholder="name@nusabs.sch.id"
+                placeholder="nama@email.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -119,7 +171,7 @@ export default function RegisterPage() {
               <Input
                 id="password"
                 type="password"
-                placeholder="Min. 6 characters"
+                placeholder="Min. 6 karakter"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -128,14 +180,14 @@ export default function RegisterPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="role">I am a...</Label>
+              <Label htmlFor="role">Saya adalah...</Label>
               <Select value={role} onValueChange={setRole}>
                 <SelectTrigger className="bg-secondary/50 border-border/50 focus:border-primary/50 transition-colors">
-                  <SelectValue placeholder="Select your role" />
+                  <SelectValue placeholder="Pilih peran Anda" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="student">Student</SelectItem>
-                  <SelectItem value="teacher">Teacher</SelectItem>
+                  <SelectItem value="student">🎓 Siswa</SelectItem>
+                  <SelectItem value="teacher">👨‍🏫 Guru</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -147,12 +199,12 @@ export default function RegisterPage() {
               ) : (
                 <UserPlus className="w-4 h-4 mr-2" />
               )}
-              Register
+              Daftar
             </Button>
             <div className="text-center text-sm text-muted-foreground">
-              Already have an account?{' '}
+              Sudah punya akun?{' '}
               <Link to="/login" className="text-primary hover:underline font-medium">
-                Login here
+                Login di sini
               </Link>
             </div>
           </CardFooter>

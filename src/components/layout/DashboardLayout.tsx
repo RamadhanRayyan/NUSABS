@@ -8,14 +8,16 @@ import {
   CheckSquare, 
   FolderKanban, 
   UserCircle, 
-  Settings, 
   LogOut, 
   Menu, 
   X,
   Bell,
   Search,
-  ChevronRight,
-  GraduationCap
+  GraduationCap,
+  Clock,
+  Eye,
+  ClipboardCheck,
+  ShieldCheck
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -30,17 +32,19 @@ interface SidebarItem {
 }
 
 const sidebarItems: SidebarItem[] = [
+  // Admin
   { icon: LayoutDashboard, label: 'Overview', path: '/admin', roles: ['admin'] },
+  { icon: Users, label: 'Manajemen User', path: '/admin/users', roles: ['admin'] },
+  { icon: GraduationCap, label: 'Manajemen Kelas', path: '/admin/classes', roles: ['admin'] },
+  { icon: Eye, label: 'Tracking Siswa', path: '/admin/students', roles: ['admin'] },
+  { icon: ShieldCheck, label: 'Tracking Guru', path: '/admin/teachers', roles: ['admin'] },
+  { icon: Clock, label: 'Absensi', path: '/admin/attendance', roles: ['admin'] },
+  // Teacher
   { icon: LayoutDashboard, label: 'Overview', path: '/teacher', roles: ['teacher'] },
+  { icon: ClipboardCheck, label: 'Assignments', path: '/teacher/assignments', roles: ['teacher'] },
+  // Student
   { icon: LayoutDashboard, label: 'Overview', path: '/student', roles: ['student'] },
-  { icon: Users, label: 'User Management', path: '/admin/users', roles: ['admin'] },
-  { icon: GraduationCap, label: 'Classes', path: '/admin/classes', roles: ['admin'] },
-  { icon: BookOpen, label: 'My Classes', path: '/teacher/classes', roles: ['teacher'] },
-  { icon: CheckSquare, label: 'Assignments', path: '/teacher/assignments', roles: ['teacher'] },
   { icon: BookOpen, label: 'Assignments', path: '/student/assignments', roles: ['student'] },
-  { icon: FolderKanban, label: 'Projects', path: '/student/projects', roles: ['student'] },
-  { icon: UserCircle, label: 'Portfolio', path: '/student/portfolio', roles: ['student'] },
-  { icon: CheckSquare, label: 'Attendance', path: '/student/attendance', roles: ['student'] },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -56,46 +60,60 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     navigate('/login');
   };
 
+  const roleLabel: Record<string, string> = { admin: 'Administrator', teacher: 'Guru', student: 'Siswa' };
+
   return (
     <div className="min-h-screen bg-background flex">
       {/* Sidebar Desktop */}
       <aside className="hidden lg:flex flex-col w-64 border-r border-border/40 bg-card/30 backdrop-blur-md sticky top-0 h-screen">
         <div className="p-6 flex items-center gap-3">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-            <span className="text-primary-foreground font-bold">N</span>
+          <div className="w-9 h-9 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
+            <span className="text-primary-foreground font-bold text-lg">N</span>
           </div>
-          <span className="text-xl font-bold tracking-tight">NUSA <span className="text-primary">Boarding</span></span>
+          <div>
+            <span className="text-lg font-bold tracking-tight">NUSA<span className="text-primary">BS</span></span>
+            <p className="text-[10px] text-muted-foreground -mt-0.5">Boarding School</p>
+          </div>
         </div>
 
-        <nav className="flex-1 px-4 space-y-1">
-          {filteredItems.map((item, idx) => (
-            <Link key={idx} to={item.path}>
-              <Button
-                variant={location.pathname === item.path ? 'secondary' : 'ghost'}
-                className="w-full justify-start gap-3 h-11"
-              >
-                <item.icon className={`w-4 h-4 ${location.pathname === item.path ? 'text-primary' : 'text-muted-foreground'}`} />
-                {item.label}
-              </Button>
-            </Link>
-          ))}
+        <Separator className="bg-border/30 mx-4" />
+
+        <nav className="flex-1 px-3 py-4 space-y-1">
+          {filteredItems.map((item, idx) => {
+            const isActive = location.pathname === item.path;
+            return (
+              <Link key={idx} to={item.path}>
+                <Button
+                  variant={isActive ? 'secondary' : 'ghost'}
+                  className={`w-full justify-start gap-3 h-10 text-sm transition-all ${isActive ? 'bg-primary/10 text-primary border border-primary/20' : 'hover:bg-secondary/50'}`}
+                >
+                  <item.icon className={`w-4 h-4 ${isActive ? 'text-primary' : 'text-muted-foreground'}`} />
+                  {item.label}
+                </Button>
+              </Link>
+            );
+          })}
         </nav>
 
-        <div className="p-4 mt-auto space-y-4">
-          <Separator className="bg-border/40" />
-          <div className="flex items-center gap-3 px-2">
-            <Avatar className="h-9 w-9 border border-border">
+        <div className="p-4 mt-auto space-y-3">
+          <Separator className="bg-border/30" />
+          <div className="flex items-center gap-3 px-2 py-1">
+            <Avatar className="h-9 w-9 border border-primary/20">
               <AvatarImage src={profile?.avatar_url} />
-              <AvatarFallback>{profile?.name?.charAt(0)}</AvatarFallback>
+              <AvatarFallback className="bg-primary/10 text-primary text-sm">{profile?.name?.charAt(0)?.toUpperCase()}</AvatarFallback>
             </Avatar>
             <div className="flex-1 overflow-hidden">
               <p className="text-sm font-medium truncate">{profile?.name}</p>
-              <p className="text-xs text-muted-foreground capitalize">{profile?.role}</p>
+              <p className="text-[10px] text-muted-foreground">{roleLabel[profile?.role || ''] || profile?.role}</p>
             </div>
           </div>
-          <Button variant="ghost" className="w-full justify-start gap-3 h-11 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={handleSignOut}>
+          <Button 
+            variant="ghost" 
+            className="w-full justify-start gap-3 h-10 text-destructive hover:text-destructive hover:bg-destructive/10 text-sm" 
+            onClick={handleSignOut}
+          >
             <LogOut className="w-4 h-4" />
-            Sign Out
+            Keluar
           </Button>
         </div>
       </aside>
@@ -109,25 +127,33 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
                   <span className="text-primary-foreground font-bold">N</span>
                 </div>
-                <span className="text-xl font-bold tracking-tight">NUSA</span>
+                <span className="text-xl font-bold tracking-tight">NUSA<span className="text-primary">BS</span></span>
               </div>
               <Button variant="ghost" size="icon" onClick={() => setIsSidebarOpen(false)}>
                 <X className="w-5 h-5" />
               </Button>
             </div>
             <nav className="space-y-1">
-              {filteredItems.map((item, idx) => (
-                <Link key={idx} to={item.path} onClick={() => setIsSidebarOpen(false)}>
-                  <Button
-                    variant={location.pathname === item.path ? 'secondary' : 'ghost'}
-                    className="w-full justify-start gap-3 h-11"
-                  >
-                    <item.icon className="w-4 h-4" />
-                    {item.label}
-                  </Button>
-                </Link>
-              ))}
+              {filteredItems.map((item, idx) => {
+                const isActive = location.pathname === item.path;
+                return (
+                  <Link key={idx} to={item.path} onClick={() => setIsSidebarOpen(false)}>
+                    <Button
+                      variant={isActive ? 'secondary' : 'ghost'}
+                      className={`w-full justify-start gap-3 h-10 ${isActive ? 'bg-primary/10 text-primary' : ''}`}
+                    >
+                      <item.icon className={`w-4 h-4 ${isActive ? 'text-primary' : ''}`} />
+                      {item.label}
+                    </Button>
+                  </Link>
+                );
+              })}
             </nav>
+            <div className="pt-4">
+              <Button variant="ghost" className="w-full justify-start gap-3 h-10 text-destructive" onClick={handleSignOut}>
+                <LogOut className="w-4 h-4" /> Keluar
+              </Button>
+            </div>
           </aside>
         </div>
       )}
@@ -149,13 +175,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" className="relative">
               <Bell className="w-5 h-5" />
               <span className="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full border-2 border-background" />
             </Button>
             <Separator orientation="vertical" className="h-6" />
-            <Badge variant="outline" className="capitalize hidden sm:flex">{profile?.role}</Badge>
+            <Badge variant="outline" className="capitalize hidden sm:flex text-xs">{roleLabel[profile?.role || ''] || profile?.role}</Badge>
           </div>
         </header>
 

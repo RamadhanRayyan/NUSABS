@@ -18,23 +18,21 @@ export default function LoginPage() {
 
   // Redirect logic
   useEffect(() => {
+    // If we're still loading, don't do anything yet
+    if (authLoading) return;
+
+    // If no user is logged in, stay on login
+    if (!user) return;
+
+    // If we have a user but no profile yet, wait for profile (it's being fetched/created by AuthContext)
+    if (!profile) return;
+
     // If we have both user and profile, we can redirect
-    if (!authLoading && user && profile) {
-      if (profile.status === 'active') {
-        navigate('/dashboard');
-      } else {
-        navigate('/waiting');
-      }
-    }
-    
-    // Fallback: If loading finished, user exists, but profile is missing
-    // after a reasonable timeout, we might be in a stuck state.
-    if (!authLoading && user && !profile) {
-      console.warn("User authenticated but profile not found in database.");
-      // If no profile after loading, they might need to logout or register again
-      // but let's try to redirect to /waiting or /dashboard anyway and let the 
-      // routes handle the error more gracefully than a stuck screen.
-      navigate('/dashboard'); 
+    if (profile.status === 'active') {
+      navigate('/dashboard');
+    } else {
+      // If status is pending or rejected, send to waiting page
+      navigate('/waiting');
     }
   }, [user, profile, authLoading, navigate]);
 

@@ -22,4 +22,7 @@ export interface UserProfile {
   status: UserStatus;
   class_id?: string;
   created_at: string;
+  avatar_url?: string;
+  // Joined field from foreign key
+  class?: { name: string } | null;
 }

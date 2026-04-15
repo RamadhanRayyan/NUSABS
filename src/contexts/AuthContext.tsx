@@ -45,13 +45,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function fetchProfile(userId: string) {
     try {
+      setLoading(true);
       const { data, error } = await supabase
         .from('users')
         .select('*')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
 
-      if (error && error.code === 'PGRST116') {
+      if (!data && !error) {
         // Record missing! Attempt to auto-create from auth metadata
         console.warn('Profile missing in DB, attempting auto-repair...');
         const { data: { user } } = await supabase.auth.getUser();
@@ -64,7 +65,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               email: user.email!,
               role: user.user_metadata?.role || 'student',
               status: 'pending'
-            })
+            }, { onConflict: 'id' })
             .select()
             .single();
           
@@ -79,6 +80,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setProfile(data);
     } catch (error) {
       console.error('Error fetching profile:', error);
+      setProfile(null);
     } finally {
       setLoading(false);
     }
