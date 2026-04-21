@@ -1,0 +1,165 @@
+Feature Design and System Flow for School LMS Platform
+
+A solid Learning Management System (LMS) requires structured role management (Admin, Teacher, Student) along with strict access control. During registration, users select a role (Admin/Teacher/Student) and must wait for Admin approval before gaining access. The Admin has full authority to approve, reject, or modify role requests. For example, if a user registers as an Admin but should actually be a Teacher, it is safer to reject the request and require re-registration for security reasons.
+
+Best practices emphasize a clear role hierarchy:
+
+Admin has full system control
+Teacher manages learning content and assignments
+Student accesses only relevant materials
+
+The principle of least privilege should be applied, meaning users only receive the minimum access necessary to perform their tasks. After account creation, Admin must verify user data (such as class assignment) before activation.
+
+Navigation & Role-Based Sidebar
+
+The interface should adapt to each role. A typical LMS dashboard includes a sidebar (left) and a main content panel (right).
+
+Admin Sidebar
+Dashboard
+User Management (Approve/Reject Accounts)
+Class Management
+Attendance Reports
+Activity Logs
+Notifications
+Settings
+Teacher Sidebar
+Dashboard
+My Classes
+Materials & Assignments
+Gradebook
+Attendance
+Discussion / Forum
+Notifications
+Profile
+Student Sidebar
+Dashboard
+My Class
+Learning Materials
+Assignments / Homework
+Submission History
+Attendance
+Notifications
+Profile
+
+This structure ensures clarity and efficiency, similar to modern LMS platforms that integrate attendance, grading, scheduling, and communication in one interface.
+
+Class & User Management
+
+Admins can:
+
+Create classes (e.g., “Grade 10A”)
+Assign students to classes
+View total number of students automatically
+Assign teachers with specific roles (e.g., Diniyyah, IT, Homeroom Teacher)
+Promote students in bulk (Grade 10 → 11 → 12)
+
+During registration, students must input their class. If incorrect, Admin can edit and reassign them. This gives Admin full visibility of:
+
+Student distribution per class
+Teacher assignments
+Class structure and transitions
+Teacher Features: Materials & Assignments
+
+Teachers can create learning content with the following structure:
+
+Title (e.g., “Poster Assignment” or “Diniyyah Concept Material”)
+Content (file, image, or link)
+Optional message/instructions
+Type:
+Material (view-only)
+Assignment (PR) (mandatory submission)
+
+If marked as an assignment:
+
+A deadline must be set
+Students are notified automatically
+
+The system must visually highlight late submissions (e.g., red indicators). This allows teachers to quickly identify which students submitted late.
+
+Teachers can also:
+
+Review submissions
+Assign grades
+Provide feedback
+Student Features: Access & Submission
+
+Students can:
+
+Access all materials anytime (24/7)
+Download or view content (PDF, video, image, links)
+Receive notifications for new assignments
+
+When submitting assignments:
+
+Input title
+Upload content (file, image, or link)
+Add optional message (e.g., reason for late submission)
+
+Students can:
+
+Track submission status (submitted / pending / late)
+View grades and feedback
+Attendance System (Teacher-Controlled)
+
+Attendance is managed only by teachers to prevent dishonesty.
+
+Teachers mark each student as:
+
+Present (Hadir)
+Excused (Izin)
+Absent (Alfa)
+
+This can be implemented using simple UI elements (buttons or dropdowns).
+
+Admins can:
+
+View attendance summaries per student
+Filter by date range (e.g., Jan 1 – May 1)
+Access statistics such as:
+Total present days
+Excused absences
+Unexcused absences
+
+This system ensures transparency and accountability.
+
+Recommended Additional Features
+
+To enhance the system further:
+
+1. Notification System
+Assignment uploads
+Upcoming deadlines
+Late submissions
+Account approvals
+2. Discussion / Chat System
+Class forums
+Direct communication between teacher and students
+3. Search & Filter
+Search users, classes, assignments
+Filter large datasets efficiently
+4. Reports & Analytics
+Student performance
+Assignment completion rates
+Attendance statistics
+5. External Integrations
+Video conferencing (Zoom / Google Meet)
+Calendar integration
+Email system
+6. Security Measures
+Password hashing (bcrypt)
+SSL encryption
+Email verification
+7. Gamification & Certification (Optional)
+Badges and achievements
+Digital report cards or certificates
+Conclusion
+
+The proposed system already aligns with modern LMS standards:
+
+Role-based access with admin approval
+Structured class and user management
+Integrated material and assignment system
+Teacher-controlled attendance
+Role-specific UI/UX
+
+With proper implementation, this platform can function effectively for a school environment and serve as a scalable foundation for future expansion.

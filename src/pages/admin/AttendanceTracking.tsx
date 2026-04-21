@@ -24,8 +24,8 @@ export default function AttendanceTracking() {
     setLoading(true);
     try {
       const [today, all] = await Promise.all([
-        supabaseService.getTodayAttendance(),
-        supabaseService.getAllAttendanceLogs(100),
+        supabaseService.getTodayClassAttendance(),
+        supabaseService.getAllClassAttendanceLogs(100),
       ]);
       setTodayLogs(today || []);
       setAllLogs(all || []);
@@ -35,9 +35,9 @@ export default function AttendanceTracking() {
   }
 
   const logs = view === 'today' ? todayLogs : allLogs;
-  const checkinToday = todayLogs.filter(l => l.type === 'checkin').length;
-  const checkoutToday = todayLogs.filter(l => l.type === 'checkout').length;
-  const uniqueToday = new Set(todayLogs.filter(l => l.type === 'checkin').map(l => l.user_id)).size;
+  const presentToday = todayLogs.filter(l => l.status === 'present').length;
+  const excusedToday = todayLogs.filter(l => l.status === 'excused').length;
+  const absentToday = todayLogs.filter(l => l.status === 'absent').length;
 
   return (
     <div className="space-y-6">
@@ -62,28 +62,28 @@ export default function AttendanceTracking() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Card className="bg-card/30 border-border/30">
           <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-emerald-500/10"><LogIn className="w-4 h-4 text-emerald-500" /></div>
+            <div className="p-2 rounded-lg bg-emerald-500/10"><CheckCircle2 className="w-4 h-4 text-emerald-500" /></div>
             <div>
-              <p className="text-xs text-muted-foreground">Check-In Hari Ini</p>
-              <p className="text-xl font-bold text-emerald-500">{checkinToday}</p>
+              <p className="text-xs text-muted-foreground">Hadir Hari Ini</p>
+              <p className="text-xl font-bold text-emerald-500">{presentToday}</p>
             </div>
           </CardContent>
         </Card>
         <Card className="bg-card/30 border-border/30">
           <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-blue-500/10"><LogOut className="w-4 h-4 text-blue-500" /></div>
+            <div className="p-2 rounded-lg bg-amber-500/10"><Clock className="w-4 h-4 text-amber-500" /></div>
             <div>
-              <p className="text-xs text-muted-foreground">Check-Out Hari Ini</p>
-              <p className="text-xl font-bold text-blue-500">{checkoutToday}</p>
+              <p className="text-xs text-muted-foreground">Izin Hari Ini</p>
+              <p className="text-xl font-bold text-amber-500">{excusedToday}</p>
             </div>
           </CardContent>
         </Card>
         <Card className="bg-card/30 border-border/30">
           <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-amber-500/10"><Users className="w-4 h-4 text-amber-500" /></div>
+            <div className="p-2 rounded-lg bg-rose-500/10"><Users className="w-4 h-4 text-rose-500" /></div>
             <div>
-              <p className="text-xs text-muted-foreground">Orang Hadir</p>
-              <p className="text-xl font-bold text-amber-500">{uniqueToday}</p>
+              <p className="text-xs text-muted-foreground">Alfa Hari Ini</p>
+              <p className="text-xl font-bold text-rose-500">{absentToday}</p>
             </div>
           </CardContent>
         </Card>
@@ -91,7 +91,7 @@ export default function AttendanceTracking() {
           <CardContent className="p-4 flex items-center gap-3">
             <div className="p-2 rounded-lg bg-purple-500/10"><Calendar className="w-4 h-4 text-purple-500" /></div>
             <div>
-              <p className="text-xs text-muted-foreground">Total Records</p>
+              <p className="text-xs text-muted-foreground">Total Absensi</p>
               <p className="text-xl font-bold">{allLogs.length}</p>
             </div>
           </CardContent>
@@ -124,11 +124,12 @@ export default function AttendanceTracking() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Pengguna</TableHead>
-                  <TableHead>Tipe</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Waktu</TableHead>
+                  <TableHead>Siswa</TableHead>
+                  <TableHead>Kelas</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Tanggal</TableHead>
                   <TableHead>Catatan</TableHead>
+                  <TableHead>Guru PIC</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -137,7 +138,7 @@ export default function AttendanceTracking() {
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <Avatar className="h-8 w-8">
-                          <AvatarFallback className={`text-xs ${log.type === 'checkin' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-zinc-500/10 text-zinc-400'}`}>
+                          <AvatarFallback className={`text-xs ${log.status === 'present' ? 'bg-emerald-500/10 text-emerald-500' : log.status === 'excused' ? 'bg-amber-500/10 text-amber-500' : 'bg-rose-500/10 text-rose-500'}`}>
                             {log.user?.name?.[0]?.toUpperCase() || '?'}
                           </AvatarFallback>
                         </Avatar>
@@ -148,24 +149,25 @@ export default function AttendanceTracking() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline" className={`text-xs gap-1 ${
-                        log.type === 'checkin' ? 'text-emerald-500 border-emerald-500/30 bg-emerald-500/10' : 'text-zinc-400 border-zinc-500/30 bg-zinc-500/10'
-                      }`}>
-                        {log.type === 'checkin' ? <LogIn className="w-3 h-3" /> : <LogOut className="w-3 h-3" />}
-                        {log.type === 'checkin' ? 'Masuk' : 'Keluar'}
-                      </Badge>
+                      <Badge variant="secondary" className="text-[10px] capitalize">{log.class?.name || '—'}</Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="secondary" className="text-[10px] capitalize">{log.user?.role || '—'}</Badge>
+                      <Badge variant="outline" className={`text-xs gap-1 ${
+                        log.status === 'present' ? 'text-emerald-500 border-emerald-500/30 bg-emerald-500/10' : 
+                        log.status === 'excused' ? 'text-amber-500 border-amber-500/30 bg-amber-500/10' : 
+                        'text-rose-500 border-rose-500/30 bg-rose-500/10'
+                      }`}>
+                        {log.status === 'present' ? 'Hadir' : log.status === 'excused' ? 'Izin' : 'Alfa'}
+                      </Badge>
                     </TableCell>
                     <TableCell className="text-xs text-muted-foreground">
-                      {new Date(log.created_at).toLocaleString('id-ID', {
-                        day: '2-digit', month: 'short', year: 'numeric',
-                        hour: '2-digit', minute: '2-digit'
-                      })}
+                      {log.date ? new Date(log.date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
                     </TableCell>
                     <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate">
                       {log.note || '—'}
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      {log.teacher?.name || '—'}
                     </TableCell>
                   </TableRow>
                 ))}

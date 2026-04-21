@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Plus, Users, GraduationCap, Loader2, BookOpen, Trash2, RefreshCw, ArrowLeft } from 'lucide-react';
+import { Plus, Users, GraduationCap, Loader2, BookOpen, Trash2, RefreshCw, ArrowLeft, Pencil } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
@@ -25,6 +25,7 @@ export default function ClassManagement() {
   const [selectedClass, setSelectedClass] = useState<any>(null);
   const [selectedStudentId, setSelectedStudentId] = useState('');
   const [deleteConfirm, setDeleteConfirm] = useState<any>(null);
+  const [editOpen, setEditOpen] = useState(false);
 
   useEffect(() => { fetchAll(); }, []);
 
@@ -57,6 +58,25 @@ export default function ClassManagement() {
       fetchAll();
     } catch (e: any) {
       toast.error('Gagal membuat kelas: ' + (e.message || ''));
+    } finally { setSaving(false); }
+  }
+
+  async function handleEdit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!selectedClass) return;
+    setSaving(true);
+    try {
+      const updateData = { 
+        name: form.name, 
+        teacher_id: (form.teacher_id && form.teacher_id !== 'none') ? form.teacher_id : null 
+      };
+      const { error } = await supabase.from('classes').update(updateData).eq('id', selectedClass.id);
+      if (error) throw error;
+      toast.success('Kelas berhasil diubah!');
+      setEditOpen(false);
+      fetchAll();
+    } catch (e: any) {
+      toast.error('Gagal mengubah kelas');
     } finally { setSaving(false); }
   }
 
@@ -186,6 +206,13 @@ export default function ClassManagement() {
                       </Badge>
                       <Button
                         size="sm" variant="ghost"
+                        className="h-7 w-7 p-0 text-primary/50 hover:text-primary opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => { setSelectedClass(cls); setForm({ name: cls.name, teacher_id: cls.teacher_id || '' }); setEditOpen(true); }}
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button
+                        size="sm" variant="ghost"
                         className="h-7 w-7 p-0 text-destructive/50 hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
                         onClick={() => setDeleteConfirm(cls)}
                       >
@@ -264,6 +291,40 @@ export default function ClassManagement() {
               <Button type="button" variant="outline" onClick={() => setCreateOpen(false)}>Batal</Button>
               <Button type="submit" disabled={saving}>
                 {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Buat Kelas
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Class Modal */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="sm:max-w-[400px]">
+          <form onSubmit={handleEdit}>
+            <DialogHeader>
+              <DialogTitle>Edit Kelas</DialogTitle>
+              <DialogDescription>Ubah nama kelas atau ganti guru pengajar.</DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="space-y-2">
+                <Label>Nama Kelas</Label>
+                <Input placeholder="contoh: Programming A" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required />
+              </div>
+              <div className="space-y-2">
+                <Label>Guru Pengajar</Label>
+                <Select value={form.teacher_id} onValueChange={v => setForm({ ...form, teacher_id: v })}>
+                  <SelectTrigger><SelectValue placeholder="Pilih guru..." /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none" className="text-muted-foreground">-- Hapus Guru Pengajar --</SelectItem>
+                    {teachers.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>Batal</Button>
+              <Button type="submit" disabled={saving}>
+                {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Simpan
               </Button>
             </DialogFooter>
           </form>

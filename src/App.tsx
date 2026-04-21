@@ -28,6 +28,7 @@ import AttendanceTracking from "./pages/admin/AttendanceTracking";
 // Teacher pages
 import TeacherDashboard from "./pages/teacher/TeacherDashboard";
 import TeacherAssignments from "./pages/teacher/TeacherAssignments";
+import TeacherAttendance from "./pages/teacher/TeacherAttendance";
 
 // Student pages
 import StudentDashboard from "./pages/student/StudentDashboard";
@@ -88,6 +89,11 @@ function App() {
           <Route path="/teacher/assignments" element={
             <ProtectedRoute allowedRoles={['teacher']}>
               <DashboardLayout><TeacherAssignments /></DashboardLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/teacher/attendance" element={
+            <ProtectedRoute allowedRoles={['teacher']}>
+              <DashboardLayout><TeacherAttendance /></DashboardLayout>
             </ProtectedRoute>
           } />
 

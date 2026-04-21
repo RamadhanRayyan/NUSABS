@@ -224,6 +224,57 @@ export const supabaseService = {
     return data ?? [];
   },
 
+  // ── TEACHER LED ATTENDANCE ────────────────────────────────────────────────
+  async getStudentsByClass(classId: string) {
+    const { data, error } = await supabase
+      .from('users')
+      .select('id, name, email')
+      .eq('class_id', classId)
+      .eq('role', 'student')
+      .eq('status', 'active')
+      .order('name', { ascending: true });
+    if (error) throw error;
+    return data ?? [];
+  },
+
+  async getAttendanceByDate(classId: string, date: string) {
+    const { data, error } = await supabase
+      .from('attendance_records')
+      .select('*')
+      .eq('class_id', classId)
+      .eq('date', date);
+    if (error) throw error;
+    return data ?? [];
+  },
+
+  async upsertAttendance(records: any[]) {
+    const { error } = await supabase
+      .from('attendance_records')
+      .upsert(records, { onConflict: 'user_id,date' });
+    if (error) throw error;
+  },
+
+  async getAllClassAttendanceLogs(limit = 100) {
+    const { data, error } = await supabase
+      .from('attendance_records')
+      .select('*, user:users!attendance_records_user_id_fkey(name, email, role), class:classes(name), teacher:users!attendance_records_teacher_id_fkey(name)')
+      .order('created_at', { ascending: false })
+      .limit(limit);
+    if (error) throw error;
+    return data ?? [];
+  },
+
+  async getTodayClassAttendance() {
+    const today = new Date().toISOString().split('T')[0];
+    const { data, error } = await supabase
+      .from('attendance_records')
+      .select('*, user:users!attendance_records_user_id_fkey(name, email, role), class:classes(name), teacher:users!attendance_records_teacher_id_fkey(name)')
+      .eq('date', today)
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return data ?? [];
+  },
+
   // ── EXAM SCORES ───────────────────────────────────────────────────────────
   async getExamScores(userId: string) {
     const { data, error } = await supabase

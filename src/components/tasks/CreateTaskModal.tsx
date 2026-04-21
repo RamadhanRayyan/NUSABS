@@ -19,7 +19,7 @@ export function CreateTaskModal({ onTaskCreated }: { onTaskCreated: () => void }
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    type: 'programming_weekly',
+    type: 'assignment',
     user_id: 'all',
     deadline: '',
   });
@@ -53,7 +53,7 @@ export function CreateTaskModal({ onTaskCreated }: { onTaskCreated: () => void }
       }
       setOpen(false);
       onTaskCreated();
-      setFormData({ title: '', description: '', type: 'programming_weekly', user_id: 'all', deadline: '' });
+      setFormData({ title: '', description: '', type: 'assignment', user_id: 'all', deadline: '' });
     } catch (err: any) {
       setError(err.message || 'Failed to create task.');
     } finally {
@@ -108,6 +108,8 @@ export function CreateTaskModal({ onTaskCreated }: { onTaskCreated: () => void }
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="material">📖 Learning Material (View Only)</SelectItem>
+                    <SelectItem value="assignment">📝 Required Assignment (PR)</SelectItem>
                     <SelectItem value="design_daily">Designer Daily</SelectItem>
                     <SelectItem value="programming_weekly">Programmer Weekly</SelectItem>
                     <SelectItem value="business_monthly">Business Monthly</SelectItem>

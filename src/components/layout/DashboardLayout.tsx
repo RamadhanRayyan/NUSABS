@@ -43,6 +43,7 @@ const sidebarItems: SidebarItem[] = [
   // Teacher
   { icon: LayoutDashboard, label: 'Overview', path: '/teacher', roles: ['teacher'] },
   { icon: ClipboardCheck, label: 'Assignments', path: '/teacher/assignments', roles: ['teacher'] },
+  { icon: Clock, label: 'Absensi Kelas', path: '/teacher/attendance', roles: ['teacher'] },
   // Student
   { icon: LayoutDashboard, label: 'Overview', path: '/student', roles: ['student'] },
   { icon: BookOpen, label: 'Assignments', path: '/student/assignments', roles: ['student'] },

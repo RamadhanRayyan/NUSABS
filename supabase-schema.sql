@@ -31,13 +31,25 @@ CREATE TABLE IF NOT EXISTS public.classes (
 CREATE TABLE IF NOT EXISTS public.tasks (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   user_id UUID REFERENCES public.users(id) ON DELETE CASCADE NOT NULL,
-  type TEXT NOT NULL CHECK (type IN ('design_daily','programming_weekly','business_monthly')),
+  type TEXT NOT NULL CHECK (type IN ('material','assignment','design_daily','programming_weekly','business_monthly')),
   title TEXT NOT NULL,
   description TEXT,
   deadline TIMESTAMPTZ,
   status TEXT DEFAULT 'pending' CHECK (status IN ('pending','submitted','reviewed')),
   created_by UUID REFERENCES public.users(id) ON DELETE SET NULL,
   created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS public.attendance_records (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  user_id UUID REFERENCES public.users(id) ON DELETE CASCADE NOT NULL,
+  teacher_id UUID REFERENCES public.users(id) ON DELETE SET NULL,
+  class_id UUID REFERENCES public.classes(id) ON DELETE SET NULL,
+  date DATE NOT NULL DEFAULT CURRENT_DATE,
+  status TEXT NOT NULL DEFAULT 'present' CHECK (status IN ('present','excused','absent')),
+  note TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(user_id, date)
 );
 
 CREATE TABLE IF NOT EXISTS public.submissions (
@@ -215,6 +227,7 @@ ALTER TABLE public.check_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.exam_scores ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.activity_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.attendance_records ENABLE ROW LEVEL SECURITY;
 
 -- Drop semua policy lama
 DO $$
@@ -284,6 +297,24 @@ CREATE POLICY "r_write" ON public.reviews FOR INSERT
 
 -- CHECK_LOGS
 CREATE POLICY "cl_own" ON public.check_logs FOR ALL USING (auth.uid() = user_id);
+
+-- ATTENDANCE_RECORDS
+CREATE POLICY "ar_read" ON public.attendance_records FOR SELECT
+  USING (
+    auth.uid() = user_id OR 
+    (auth.jwt()->'user_metadata'->>'role') IN ('teacher','admin') OR
+    (auth.jwt()->>'email') = 'muhammadramadhanrayyan@gmail.com'
+  );
+CREATE POLICY "ar_write" ON public.attendance_records FOR INSERT
+  WITH CHECK (
+    (auth.jwt()->'user_metadata'->>'role') IN ('teacher','admin') OR
+    (auth.jwt()->>'email') = 'muhammadramadhanrayyan@gmail.com'
+  );
+CREATE POLICY "ar_update" ON public.attendance_records FOR UPDATE
+  USING (
+    (auth.jwt()->'user_metadata'->>'role') IN ('teacher','admin') OR
+    (auth.jwt()->>'email') = 'muhammadramadhanrayyan@gmail.com'
+  );
 
 -- EXAM_SCORES
 CREATE POLICY "es_read" ON public.exam_scores FOR SELECT

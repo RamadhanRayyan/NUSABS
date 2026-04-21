@@ -29,6 +29,8 @@ export default function StudentAssignments() {
   }
 
   const typeMap: Record<string, { label: string; color: string }> = {
+    material:            { label: '📖 Learning Material', color: 'bg-emerald-500/10 text-emerald-500' },
+    assignment:          { label: '📝 Assignment',        color: 'bg-rose-500/10 text-rose-500' },
     design_daily:        { label: 'Design Daily',      color: 'bg-purple-500/10 text-purple-500' },
     programming_weekly:  { label: 'Programming Weekly', color: 'bg-blue-500/10 text-blue-500' },
     business_monthly:    { label: 'Business Monthly',   color: 'bg-orange-500/10 text-orange-500' },
@@ -85,7 +87,7 @@ export default function StudentAssignments() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {filtered.map(task => {
             const meta = typeMap[task.type] || { label: task.type, color: '' };
-            const isOverdue = task.deadline && new Date(task.deadline) < new Date() && task.status === 'pending';
+            const isOverdue = task.type !== 'material' && task.deadline && new Date(task.deadline) < new Date() && task.status === 'pending';
 
             return (
               <Card
@@ -131,7 +133,7 @@ export default function StudentAssignments() {
                     </div>
                   )}
 
-                  {task.status === 'pending' && (
+                  {task.status === 'pending' && task.type !== 'material' && (
                     <Button
                       size="sm"
                       className="w-full gap-2 text-xs"
@@ -139,6 +141,12 @@ export default function StudentAssignments() {
                     >
                       <FileUp className="w-3.5 h-3.5" /> Submit Work
                     </Button>
+                  )}
+
+                  {task.type === 'material' && (
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-secondary/30 px-3 py-2 rounded-lg justify-center italic">
+                      View-only material
+                    </div>
                   )}
                 </CardContent>
               </Card>

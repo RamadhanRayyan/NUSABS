@@ -34,6 +34,8 @@ export default function TeacherAssignments() {
     submissions.filter(s => !s.grade);
 
   const typeColors: any = {
+    material: 'bg-emerald-500/10 text-emerald-500',
+    assignment: 'bg-rose-500/10 text-rose-500',
     design_daily: 'bg-purple-500/10 text-purple-500',
     programming_weekly: 'bg-blue-500/10 text-blue-500',
     business_monthly: 'bg-orange-500/10 text-orange-500',
