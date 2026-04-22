@@ -8,10 +8,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Loader2 } from 'lucide-react';
+import { Plus, Loader2, CheckCircle2 } from 'lucide-react';
 import { supabaseService } from '@/services/supabaseService';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 export function CreateTaskModal({ onTaskCreated }: { onTaskCreated: () => void }) {
+  const { profile } = useAuth();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [students, setStudents] = useState<any[]>([]);
@@ -42,14 +45,29 @@ export function CreateTaskModal({ onTaskCreated }: { onTaskCreated: () => void }
     setLoading(true);
     setError(null);
     try {
+      const taskData = {
+        ...formData,
+        created_by: profile?.id
+      };
+
       if (formData.user_id === 'all') {
+        if (students.length === 0) {
+          throw new Error('No active students found to assign the task to.');
+        }
+        
         // Assign to all active students
         const promises = students.map(s =>
-          supabaseService.createTask({ ...formData, user_id: s.id })
+          supabaseService.createTask({ ...taskData, user_id: s.id })
         );
         await Promise.all(promises);
+        toast.success(`Berhasil: Tugas dikirim ke ${students.length} siswa.`);
       } else {
-        await supabaseService.createTask(formData);
+        if (!formData.user_id || formData.user_id === 'all') {
+             throw new Error('Pilih siswa terlebih dahulu.');
+        }
+        const student = students.find(s => s.id === formData.user_id);
+        await supabaseService.createTask(taskData);
+        toast.success(`Berhasil: Tugas dikirim ke ${student?.name || 'siswa'}.`);
       }
       setOpen(false);
       onTaskCreated();
