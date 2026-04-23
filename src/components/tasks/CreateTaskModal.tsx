@@ -71,7 +71,7 @@ export function CreateTaskModal({ onTaskCreated }: { onTaskCreated: () => void }
              throw new Error('Pilih siswa terlebih dahulu.');
         }
         const student = students.find(s => s.id === formData.user_id);
-        await supabaseService.createTask(taskData);
+        await supabaseService.createTask({ ...taskData, user_id: student?.id });
         toast.success(`Berhasil: Tugas dikirim ke ${student?.name || 'siswa'}.`);
       }
       setOpen(false);
