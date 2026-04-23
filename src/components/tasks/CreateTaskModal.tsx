@@ -45,10 +45,15 @@ export function CreateTaskModal({ onTaskCreated }: { onTaskCreated: () => void }
     setLoading(true);
     setError(null);
     try {
-      const taskData = {
-        ...formData,
-        created_by: profile?.id
+      const taskData: any = {
+        title: formData.title,
+        description: formData.description,
+        type: formData.type,
+        created_by: profile?.id,
       };
+      if (formData.deadline) {
+        taskData.deadline = formData.deadline;
+      }
 
       if (formData.user_id === 'all') {
         if (students.length === 0) {

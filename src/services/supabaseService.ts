@@ -138,7 +138,7 @@ export const supabaseService = {
   async getClasses() {
     const { data, error } = await supabase
       .from('classes')
-      .select('*, teacher:users(name)')
+      .select('*, teacher:users!classes_teacher_id_fkey(name)')
       .order('created_at', { ascending: false });
     if (error) {
       console.warn('getClasses error:', error.message);
