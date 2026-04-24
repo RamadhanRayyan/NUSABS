@@ -61,9 +61,10 @@ export function CreateTaskModal({ onTaskCreated }: { onTaskCreated: () => void }
         }
         
         // Assign to all active students
-        const promises = students.map(s =>
-          supabaseService.createTask({ ...taskData, user_id: s.id })
-        );
+        const promises = students.map(s => {
+          supabaseService.createNotification(s.id, 'Tugas Baru', `Guru telah memberikan tugas baru: ${taskData.title}`);
+          return supabaseService.createTask({ ...taskData, user_id: s.id });
+        });
         await Promise.all(promises);
         toast.success(`Berhasil: Tugas dikirim ke ${students.length} siswa.`);
       } else {
@@ -72,6 +73,7 @@ export function CreateTaskModal({ onTaskCreated }: { onTaskCreated: () => void }
         }
         const student = students.find(s => s.id === formData.user_id);
         await supabaseService.createTask({ ...taskData, user_id: student?.id });
+        await supabaseService.createNotification(student?.id, 'Tugas Baru', `Guru telah memberikan tugas baru: ${taskData.title}`);
         toast.success(`Berhasil: Tugas dikirim ke ${student?.name || 'siswa'}.`);
       }
       setOpen(false);

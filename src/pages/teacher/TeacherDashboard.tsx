@@ -78,6 +78,14 @@ export default function TeacherDashboard() {
         score: parseFloat(scoreForm.score),
         teacher_id: profile?.id,
       });
+      
+      // Notify the student
+      await supabaseService.createNotification(
+        selectedStudent.id,
+        'Nilai Ujian Baru',
+        `Nilai untuk subjek "${scoreForm.subject}" telah ditambahkan. Skor: ${scoreForm.score}`
+      );
+
       setScoreOpen(false);
       setScoreForm({ subject: '', score: '' });
     } finally { setScoreSaving(false); }

@@ -17,13 +17,15 @@ import {
   Clock,
   Eye,
   ClipboardCheck,
-  ShieldCheck
+  ShieldCheck,
+  Trophy
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { NotificationDropdown } from './NotificationDropdown';
 
 interface SidebarItem {
   icon: React.ElementType;
@@ -44,6 +46,7 @@ const sidebarItems: SidebarItem[] = [
   { icon: LayoutDashboard, label: 'Overview', path: '/teacher', roles: ['teacher'] },
   { icon: ClipboardCheck, label: 'Assignments', path: '/teacher/assignments', roles: ['teacher'] },
   { icon: Clock, label: 'Absensi Kelas', path: '/teacher/attendance', roles: ['teacher'] },
+  { icon: Trophy, label: 'Nilai Ujian', path: '/teacher/scores', roles: ['teacher'] },
   // Student
   { icon: LayoutDashboard, label: 'Overview', path: '/student', roles: ['student'] },
   { icon: BookOpen, label: 'Assignments', path: '/student/assignments', roles: ['student'] },
@@ -179,10 +182,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
           <div className="flex items-center gap-3">
             <ThemeToggle />
-            <Button variant="ghost" size="icon" className="relative">
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full border-2 border-background" />
-            </Button>
+            <NotificationDropdown />
             <Separator orientation="vertical" className="h-6" />
             <Badge variant="outline" className="capitalize hidden sm:flex text-xs">{roleLabel[profile?.role || ''] || profile?.role}</Badge>
           </div>

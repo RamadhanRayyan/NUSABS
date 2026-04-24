@@ -40,6 +40,13 @@ export default function UserManagement() {
     setActionLoading(userId);
     try {
       await supabaseService.updateUserStatus(userId, action);
+      if (action === 'active') {
+        await supabaseService.createNotification(
+          userId, 
+          'Akun Disetujui', 
+          'Selamat! Akun Anda telah disetujui oleh Admin. Anda sekarang dapat mengakses semua fitur.'
+        );
+      }
       const msg = action === 'active' ? `✅ ${userName} disetujui` : `❌ ${userName} ditolak`;
       toast.success(msg);
       fetchUsers();

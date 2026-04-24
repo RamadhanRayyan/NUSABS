@@ -41,6 +41,15 @@ export function ReviewSubmissionModal({ submission, open, onClose, onReviewed }:
         score: scoreNum,
         feedback: formData.feedback,
       });
+
+      // Notify the student
+      if (submission.user_id) {
+        await supabaseService.createNotification(
+          submission.user_id, 
+          'Tugas Selesai Dinilai', 
+          `Tugas "${submission.task?.title || 'Anda'}" telah dinilai dengan skor ${scoreNum}`
+        );
+      }
       onReviewed();
       onClose();
       setFormData({ score: '', feedback: '' });

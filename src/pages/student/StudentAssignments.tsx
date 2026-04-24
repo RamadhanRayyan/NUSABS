@@ -6,7 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { SubmitTaskModal } from '@/components/tasks/SubmitTaskModal';
-import { Clock, FileUp, ExternalLink, CheckCircle2, AlertCircle, Filter } from 'lucide-react';
+import { TaskDetailModal } from '@/components/tasks/TaskDetailModal';
+import { Clock, FileUp, ExternalLink, CheckCircle2, AlertCircle, Filter, MessageSquare } from 'lucide-react';
 
 export default function StudentAssignments() {
   const { profile } = useAuth();
@@ -15,6 +16,7 @@ export default function StudentAssignments() {
   const [filter, setFilter] = useState<'all' | 'pending' | 'submitted' | 'reviewed'>('all');
   const [selectedTask, setSelectedTask] = useState<any>(null);
   const [submitOpen, setSubmitOpen] = useState(false);
+  const [detailOpen, setDetailOpen] = useState(false);
 
   useEffect(() => {
     if (profile) fetchTasks();
@@ -92,11 +94,12 @@ export default function StudentAssignments() {
             return (
               <Card
                 key={task.id}
-                className={`transition-all hover:shadow-md ${
+                className={`transition-all hover:shadow-md cursor-pointer group ${
                   task.status === 'reviewed' ? 'border-emerald-500/20' :
                   task.status === 'submitted' ? 'border-blue-500/20' :
                   isOverdue ? 'border-destructive/20' : 'hover:border-primary/20'
                 }`}
+                onClick={() => { setSelectedTask(task); setDetailOpen(true); }}
               >
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between gap-2 mb-2">
@@ -137,7 +140,7 @@ export default function StudentAssignments() {
                     <Button
                       size="sm"
                       className="w-full gap-2 text-xs"
-                      onClick={() => { setSelectedTask(task); setSubmitOpen(true); }}
+                      onClick={(e) => { e.stopPropagation(); setSelectedTask(task); setSubmitOpen(true); }}
                     >
                       <FileUp className="w-3.5 h-3.5" /> Submit Work
                     </Button>
@@ -156,12 +159,19 @@ export default function StudentAssignments() {
       )}
 
       {selectedTask && (
-        <SubmitTaskModal
-          task={selectedTask}
-          open={submitOpen}
-          onClose={() => setSubmitOpen(false)}
-          onSubmitted={fetchTasks}
-        />
+        <>
+          <SubmitTaskModal
+            task={selectedTask}
+            open={submitOpen}
+            onClose={() => setSubmitOpen(false)}
+            onSubmitted={fetchTasks}
+          />
+          <TaskDetailModal
+            task={selectedTask}
+            open={detailOpen}
+            onClose={() => setDetailOpen(false)}
+          />
+        </>
       )}
     </div>
   );

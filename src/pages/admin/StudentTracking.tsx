@@ -240,12 +240,6 @@ export default function StudentTracking() {
                       : '—'}
                   </p>
                 </div>
-                <div className="bg-secondary/30 rounded-xl p-3 text-center">
-                  <p className="text-xs text-muted-foreground">Kehadiran</p>
-                  <p className="text-2xl font-bold text-amber-500">
-                    {detailData.attendance.filter((a: any) => a.type === 'checkin').length}x
-                  </p>
-                </div>
               </div>
 
               {/* Task Progress */}
@@ -305,26 +299,6 @@ export default function StudentTracking() {
                 )}
               </div>
 
-              {/* Recent Attendance */}
-              <div>
-                <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-amber-500" /> Riwayat Kehadiran
-                </h4>
-                {detailData.attendance.length === 0 ? (
-                  <p className="text-xs text-muted-foreground bg-secondary/20 rounded-lg p-4 text-center">Belum ada data kehadiran.</p>
-                ) : (
-                  <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto">
-                    {detailData.attendance.slice(0, 10).map((log: any) => (
-                      <div key={log.id} className="flex items-center gap-2 bg-secondary/20 rounded-lg px-3 py-1.5">
-                        <div className={`w-2 h-2 rounded-full ${log.type === 'checkin' ? 'bg-emerald-500' : 'bg-zinc-500'}`} />
-                        <span className="text-[11px] text-muted-foreground">
-                          {log.type === 'checkin' ? 'Masuk' : 'Keluar'} — {new Date(log.created_at).toLocaleString('id-ID', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
             </div>
           ) : null}
         </DialogContent>

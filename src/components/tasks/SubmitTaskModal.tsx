@@ -39,6 +39,15 @@ export function SubmitTaskModal({ task, open, onClose, onSubmitted }: SubmitTask
         comment: formData.comment,
         file_url: formData.file_url,
       });
+
+      // Notify the teacher
+      if (task.created_by) {
+        await supabaseService.createNotification(
+          task.created_by, 
+          'Tugas Dikumpulkan', 
+          `${profile?.name} telah mengumpulkan tugas: ${task.title}`
+        );
+      }
       onSubmitted();
       onClose();
       setFormData({ comment: '', file_url: '' });

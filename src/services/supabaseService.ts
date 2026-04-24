@@ -304,50 +304,9 @@ export const supabaseService = {
     return data ?? [];
   },
 
-  // ── ATTENDANCE (Self check-in/out) ─────────────────────────────────────────
-  async checkIn(userId: string, note?: string) {
-    const { error } = await supabase
-      .from('check_logs')
-      .insert([{ user_id: userId, type: 'checkin', note }]);
-    if (error) throw error;
-  },
-
-  async checkOut(userId: string, note?: string) {
-    const { error } = await supabase
-      .from('check_logs')
-      .insert([{ user_id: userId, type: 'checkout', note }]);
-    if (error) throw error;
-  },
-
-  async getCheckLogs(userId: string, limit = 10) {
-    const { data, error } = await supabase
-      .from('check_logs')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-      .limit(limit);
-    if (error) {
-      console.warn('getCheckLogs error:', error.message);
-      return [];
-    }
-    return data ?? [];
-  },
-
-  async getAllAttendanceLogs(limit = 50) {
-    const { data, error } = await supabase
-      .from('check_logs')
-      .select('*, user:users!check_logs_user_id_fkey(name, email, role)')
-      .order('created_at', { ascending: false })
-      .limit(limit);
-    if (error) {
-      console.warn('getAllAttendanceLogs error:', error.message);
-      return [];
-    }
-    return data ?? [];
-  },
+  // ── ATTENDANCE ─────────────────────────────────────────────────────────
 
   async getTodayAttendance() {
-    // Try attendance_records first (teacher-led), fallback to check_logs (self-check-in)
     const today = new Date().toISOString().split('T')[0];
     const { data, error } = await supabase
       .from('attendance_records')
@@ -355,16 +314,8 @@ export const supabaseService = {
       .eq('date', today)
       .order('created_at', { ascending: false });
     if (error) {
-      console.warn('getTodayAttendance (attendance_records) error, trying check_logs:', error.message);
-      // Fallback: try check_logs
-      const todayDate = new Date();
-      todayDate.setHours(0, 0, 0, 0);
-      const { data: fallback } = await supabase
-        .from('check_logs')
-        .select('*, user:users!check_logs_user_id_fkey(name, email, role)')
-        .gte('created_at', todayDate.toISOString())
-        .order('created_at', { ascending: false });
-      return fallback ?? [];
+      console.warn('getTodayAttendance (attendance_records) error:', error.message);
+      return [];
     }
     return data ?? [];
   },
@@ -504,29 +455,35 @@ export const supabaseService = {
   // ── STATISTICS ────────────────────────────────────────────────────────────
   async getStudentStats(userId: string) {
     try {
-      const [tasks, scores, logs] = await Promise.all([
+      const [tasks, examScores, submissions] = await Promise.all([
         supabase.from('tasks').select('status').eq('user_id', userId),
         supabase.from('exam_scores').select('score').eq('user_id', userId),
-        supabase.from('check_logs').select('id', { count: 'exact' })
-          .eq('user_id', userId).eq('type', 'checkin'),
+        supabase.from('submissions').select('grade').eq('user_id', userId).not('grade', 'is', null),
       ]);
+      
       const pending = tasks.data?.filter(t => t.status === 'pending').length || 0;
       const submitted = tasks.data?.filter(t => t.status === 'submitted').length || 0;
       const reviewed = tasks.data?.filter(t => t.status === 'reviewed').length || 0;
-      const avg = scores.data?.length
-        ? +(scores.data.reduce((a, s) => a + s.score, 0) / scores.data.length).toFixed(1)
+      
+      const allGrades = [
+        ...(examScores.data?.map(s => Number(s.score)) || []),
+        ...(submissions.data?.map(s => Number(s.grade)) || [])
+      ];
+
+      const avg = allGrades.length
+        ? +(allGrades.reduce((a, b) => a + b, 0) / allGrades.length).toFixed(1)
         : 0;
+
       return {
         pendingTasks: pending,
         submittedTasks: submitted,
         reviewedTasks: reviewed,
         totalTasks: tasks.data?.length || 0,
         averageScore: avg,
-        totalCheckins: logs.count || 0,
       };
     } catch (e) {
       console.warn('getStudentStats error:', e);
-      return { pendingTasks: 0, submittedTasks: 0, reviewedTasks: 0, totalTasks: 0, averageScore: 0, totalCheckins: 0 };
+      return { pendingTasks: 0, submittedTasks: 0, reviewedTasks: 0, totalTasks: 0, averageScore: 0 };
     }
   },
 
@@ -579,11 +536,10 @@ export const supabaseService = {
   // ── STUDENT TRACKING (for Admin) ──────────────────────────────────────────
   async getStudentDetail(studentId: string) {
     try {
-      const [profile, tasks, scores, logs, subs] = await Promise.all([
+      const [profile, tasks, scores, subs] = await Promise.all([
         supabase.from('users').select('*').eq('id', studentId).maybeSingle(),
         supabase.from('tasks').select('*').eq('user_id', studentId).order('created_at', { ascending: false }),
         supabase.from('exam_scores').select('*').eq('user_id', studentId).order('created_at', { ascending: false }),
-        supabase.from('check_logs').select('*').eq('user_id', studentId).order('created_at', { ascending: false }).limit(20),
         supabase.from('submissions').select('*, task:tasks(title, type)').eq('user_id', studentId).order('created_at', { ascending: false }),
       ]);
       
@@ -597,7 +553,7 @@ export const supabaseService = {
         profile: profileData,
         tasks: tasks.data ?? [],
         scores: scores.data ?? [],
-        attendance: logs.data ?? [],
+        attendance: [], // attendance records (teacher led) should probably be added here if needed, but removing check_logs
         submissions: subs.data ?? [],
       };
     } catch (e) {

@@ -37,7 +37,6 @@ export default function AdminDashboard() {
   const [logs, setLogs] = useState<any[]>([]);
   const [chartData, setChartData] = useState<any[]>([]);
   const [pendingUsers, setPendingUsers] = useState<any[]>([]);
-  const [todayAttendance, setTodayAttendance] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => { fetchAll(); }, []);
@@ -45,18 +44,16 @@ export default function AdminDashboard() {
   async function fetchAll() {
     setLoading(true);
     try {
-      const [statsData, logsData, chartData, pendingData, attendanceData] = await Promise.all([
+      const [statsData, logsData, chartData, pendingData] = await Promise.all([
         supabaseService.getAdminStats(),
         supabaseService.getActivityLogs(10),
         supabaseService.getWeeklyActivity(),
         supabaseService.getPendingUsers(),
-        supabaseService.getTodayAttendance(),
       ]);
       setStats(statsData);
       setLogs(logsData || []);
       setChartData(chartData);
       setPendingUsers(pendingData || []);
-      setTodayAttendance(attendanceData || []);
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
   }
@@ -88,7 +85,6 @@ export default function AdminDashboard() {
     { name: 'Guru', value: stats.totalTeachers, color: '#3b82f6' },
   ].filter(d => d.value > 0);
 
-  const checkinCount = todayAttendance.filter(a => a.type === 'checkin').length;
 
   if (loading) {
     return (
@@ -196,15 +192,6 @@ export default function AdminDashboard() {
             <div>
               <p className="text-xs text-muted-foreground">Total Submisi</p>
               <p className="text-xl font-bold">{stats.totalSubmissions}</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-card/30 border-border/30">
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-amber-500/10"><Clock className="w-4 h-4 text-amber-500" /></div>
-            <div>
-              <p className="text-xs text-muted-foreground">Hadir Hari Ini</p>
-              <p className="text-xl font-bold">{checkinCount}</p>
             </div>
           </CardContent>
         </Card>
