@@ -6,6 +6,7 @@ import { FileUp, Calendar, AlertCircle, Filter } from 'lucide-react';
 import { supabaseService } from '@/services/supabaseService';
 import { useAuth } from '@/contexts/AuthContext';
 import { SubmitTaskModal } from './SubmitTaskModal';
+import { TaskDetailModal } from './TaskDetailModal';
 import { Badge } from '@/components/ui/badge';
 
 export function TaskList() {
@@ -15,6 +16,7 @@ export function TaskList() {
   const [filter, setFilter] = useState<'all' | 'pending' | 'submitted' | 'reviewed'>('all');
   const [selectedTask, setSelectedTask] = useState<any>(null);
   const [submitOpen, setSubmitOpen] = useState(false);
+  const [detailOpen, setDetailOpen] = useState(false);
 
   useEffect(() => {
     if (profile) fetchTasks();
@@ -31,9 +33,15 @@ export function TaskList() {
     }
   }
 
-  const handleSubmitClick = (task: any) => {
+  const handleSubmitClick = (e: React.MouseEvent, task: any) => {
+    e.stopPropagation();
     setSelectedTask(task);
     setSubmitOpen(true);
+  };
+
+  const handleCardClick = (task: any) => {
+    setSelectedTask(task);
+    setDetailOpen(true);
   };
 
   const typeLabels: Record<string, string> = {
@@ -77,7 +85,11 @@ export function TaskList() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {filtered.map((task) => (
-            <Card key={task.id} className="hover:border-primary/30 transition-all hover:shadow-sm">
+            <Card 
+              key={task.id} 
+              className="hover:border-primary/50 transition-all hover:shadow-md cursor-pointer group"
+              onClick={() => handleCardClick(task)}
+            >
               <CardHeader className="pb-2">
                 <div className="flex justify-between items-start mb-1">
                   <span className="text-[10px] uppercase font-bold text-muted-foreground bg-secondary px-2 py-0.5 rounded">
@@ -85,21 +97,23 @@ export function TaskList() {
                   </span>
                   <StatusBadge status={task.status} />
                 </div>
-                <CardTitle className="text-base leading-snug">{task.title}</CardTitle>
+                <CardTitle className="text-base leading-snug group-hover:text-primary transition-colors">{task.title}</CardTitle>
                 <CardDescription className="line-clamp-2 text-xs">{task.description}</CardDescription>
               </CardHeader>
               <CardFooter className="pt-0 flex items-center justify-between">
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <Calendar className="w-3 h-3" />
+                  <Calendar className="w-3.5 h-3.5" />
                   {task.deadline ? new Date(task.deadline).toLocaleDateString('id-ID') : 'No deadline'}
                 </div>
                 {task.status === 'pending' && (
-                  <Button size="sm" className="gap-2 h-8 text-xs" onClick={() => handleSubmitClick(task)}>
+                  <Button size="sm" className="gap-2 h-8 text-xs" onClick={(e) => handleSubmitClick(e, task)}>
                     <FileUp className="w-3.5 h-3.5" /> Submit
                   </Button>
                 )}
                 {task.status === 'reviewed' && (
-                  <span className="text-xs text-emerald-600 font-medium">✓ Reviewed</span>
+                  <div className="flex items-center gap-1 text-emerald-600 text-xs font-medium bg-emerald-50 px-2 py-1 rounded">
+                    <span>✓ Reviewed</span>
+                  </div>
                 )}
               </CardFooter>
             </Card>
@@ -108,12 +122,19 @@ export function TaskList() {
       )}
 
       {selectedTask && (
-        <SubmitTaskModal
-          task={selectedTask}
-          open={submitOpen}
-          onClose={() => setSubmitOpen(false)}
-          onSubmitted={fetchTasks}
-        />
+        <>
+          <SubmitTaskModal
+            task={selectedTask}
+            open={submitOpen}
+            onClose={() => setSubmitOpen(false)}
+            onSubmitted={fetchTasks}
+          />
+          <TaskDetailModal
+            task={selectedTask}
+            open={detailOpen}
+            onClose={() => setDetailOpen(false)}
+          />
+        </>
       )}
     </div>
   );
