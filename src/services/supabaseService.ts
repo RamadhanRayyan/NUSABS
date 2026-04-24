@@ -240,9 +240,13 @@ export const supabaseService = {
 
   // ── SUBMISSIONS ───────────────────────────────────────────────────────────
   async submitTask(submission: any) {
+    const payload = {
+      ...submission,
+      assignment_id: submission.task_id // Added to satisfy legacy or modified database constraint
+    };
     const { error } = await supabase
       .from('submissions')
-      .upsert(submission, { onConflict: 'task_id,user_id' });
+      .upsert(payload, { onConflict: 'task_id,user_id' });
     if (error) throw error;
     await this.updateTaskStatus(submission.task_id, 'submitted');
   },
