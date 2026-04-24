@@ -242,7 +242,6 @@ export const supabaseService = {
   async submitTask(submission: any) {
     const payload = {
       ...submission,
-      assignment_id: submission.task_id, // Added to satisfy legacy or modified database constraint
       student_id: submission.user_id     // Added to satisfy not-null constraint for student_id
     };
     const { error } = await supabase
